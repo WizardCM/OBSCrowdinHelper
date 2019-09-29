@@ -2,13 +2,19 @@ package vainock;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Scanner;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -23,25 +29,29 @@ public class OBSCrowdinHelper {
 
     public static void main(String[] args) throws Exception {
 	CrowdinRequest.setMaxRunningRequests(50);
-	String resultingFileName = "OBS Studio Translators.txt";
-	String rootPath = new File("").getAbsolutePath() + "\\";
+	String rootPath = new File("").getAbsolutePath() + "/" + "OBSCrowdinHelper/";
+	for (File rootFile : new File(rootPath).listFiles()) {
+	    deleteFile(rootFile);
+	}
+	new File(rootPath).mkdirs();
 	Scanner scanner = new Scanner(System.in);
 	HashMap<String, ArrayList<String>> output = new HashMap<>();
 	HashMap<Short, String> projectLanguages = new HashMap<>();
 
-	System.out.println("OBSCrowdinHelper started! - A login is required to continue!");
+	// login
+	println("OBSCrowdinHelper started! - A login is required to continue!");
 
 	boolean run = true;
 	while (run) {
-	    System.out.println("----------");
-	    System.out.println("Email:");
+	    println("----------");
+	    println("Email:");
 	    String loginEmail = scanner.nextLine();
-	    System.out.println("Password:");
+	    println("Password:");
 	    String loginPassword = scanner.nextLine();
-	    System.out.println("Two Factor Authentication code: (Leave it out when you have no 2FA enabled.)");
+	    println("Two Factor Authentication code: (Leave it out when you have no 2FA enabled.)");
 	    String loginMfa = scanner.nextLine();
-	    System.out.println("----------");
-	    System.out.println("Logging in...");
+	    println("----------");
+	    println("Logging in...");
 	    if (loginMfa.isEmpty()) {
 		CrowdinLogin.login(loginEmail, loginPassword);
 	    } else
@@ -49,15 +59,18 @@ public class OBSCrowdinHelper {
 	    if (CrowdinLogin.loginSuccessful()) {
 		run = false;
 	    } else
-		System.out.println("The login was not successful, check your entered login information and try again!");
+		println("The login was not successful, check your entered login information and try again!");
 	}
 
-	System.out.println("Login successful!");
-	System.out.println("----------");
-	System.out.println("To start collecting all the information, press Enter.");
+	println("Login successful!");
+	println("----------");
+	println("To start collecting all the information, press Enter.");
 	scanner.nextLine();
+	println("Start fetching all datas:");
 
-	// Get all project language names and ids.
+	println(" - get project members");
+
+	// get project language names and ids
 	CrowdinRequest req1 = new CrowdinRequest();
 	req1.setUrl("backend/translate/get_editor_data");
 	req1.setMethod(HttpRequestMethod.GET);
@@ -78,11 +91,9 @@ public class OBSCrowdinHelper {
 	    JSONObject languageObj = (JSONObject) language;
 	    projectLanguages.put(Short.valueOf(languageObj.get("id").toString()), languageObj.get("name").toString());
 	}
-	System.out.println("Tracked " + projectLanguages.size() + " project languages.");
 	CrowdinRequest.clearCrowdinResponses();
-	System.out.println("Start requesting all project members...");
 
-	// Get all project members.
+	// get project members
 	int i = 1;
 	for (Short projectLanguageId : projectLanguages.keySet()) {
 	    CrowdinRequest req = new CrowdinRequest();
@@ -100,14 +111,12 @@ public class OBSCrowdinHelper {
 	    req.addParam("filter", "");
 	    req.addParam("request", String.valueOf(i));
 	    req.send();
-
-	    System.out.println("Language: " + i + "/" + projectLanguages.size());
 	    i++;
 	}
 
 	CrowdinRequest.waitForEveryRequest();
-	System.out.println("Sent all requests, start generating '" + resultingFileName + "' in '" + rootPath + "'...");
 
+	// read and format project member's name
 	for (CrowdinResponse res : CrowdinRequest.getCrowdinResponses()) {
 	    ArrayList<String> languageUsers = new ArrayList<>();
 
@@ -139,7 +148,9 @@ public class OBSCrowdinHelper {
 		output.put(projectLanguages.get(projectLanguageId), languageUsers);
 	}
 
-	// Save all project members in the Authors.txt file.
+	println(" - generate Translators.txt");
+
+	// save project members
 	ArrayList<String> translatedLangs = new ArrayList<>();
 
 	for (String keySetObj : output.keySet())
@@ -156,16 +167,84 @@ public class OBSCrowdinHelper {
 	}
 	resultSb.deleteCharAt(resultSb.length() - 1);
 
-	Writer out = new BufferedWriter(
-		new OutputStreamWriter(new FileOutputStream(new File(rootPath + resultingFileName)), "UTF-8"));
+	Writer out = new BufferedWriter(new OutputStreamWriter(
+		new FileOutputStream(new File(rootPath + "Translators.txt")), StandardCharsets.UTF_8));
 	out.append(resultSb.toString());
 	out.flush();
 	out.close();
 
-	System.out.println("Finished!");
-	System.out.println("----------");
-	System.out.println("Press Enter to close the program.");
+	println(" - build project");
+
+	// build project
+	CrowdinRequest req2 = new CrowdinRequest();
+	req2.setUrl("backend/project_actions/export_project");
+	req2.setMethod(HttpRequestMethod.GET);
+	req2.addParam("project_id", "51028");
+	req2.send().getCrowdinResponse();
+
+	run = true;
+	while (run) {
+	    CrowdinRequest req = new CrowdinRequest();
+	    req.setUrl("backend/project_actions/check_export_status");
+	    req.setMethod(HttpRequestMethod.GET);
+	    req.addParam("project_id", "51028");
+	    JSONObject statusObj = (JSONObject) new JSONParser().parse(req.send().getCrowdinResponse().getContent());
+	    if (Integer.valueOf(statusObj.get("progress").toString()) == 100) {
+		run = false;
+	    } else
+		Thread.sleep(1000);
+	}
+
+	println(" - download build");
+
+	// download build
+	Files.copy(new URL("https://crowdin.com/backend/download/project/obs-studio.zip").openStream(),
+		new File(rootPath + "Translations.zip").toPath());
+
+	println(" - unzip build");
+
+	// unzip build
+	ZipInputStream zipIn = new ZipInputStream(new FileInputStream(rootPath + "Translations.zip"));
+	ZipEntry entry = zipIn.getNextEntry();
+	byte[] buffer = new byte[2048];
+	while (entry != null) {
+	    String filePath = rootPath + "Translations/" + entry.getName();
+	    if (entry.isDirectory())
+		new File(filePath).mkdirs();
+	    if (!entry.isDirectory()) {
+		FileOutputStream fos = new FileOutputStream(new File(filePath));
+		int read = 0;
+		while ((read = zipIn.read(buffer, 0, buffer.length)) != -1) {
+		    fos.write(buffer, 0, read);
+		}
+		fos.flush();
+		fos.close();
+	    }
+	    zipIn.closeEntry();
+	    entry = zipIn.getNextEntry();
+	}
+	zipIn.close();
+	new File(rootPath + "Translations.zip").delete();
+
+	println("Finished!");
+	println("----------");
+	println("Press Enter to close the program.");
 	scanner.nextLine();
 	scanner.close();
+    }
+
+    private static void println(String text) {
+	System.out.println(text);
+    }
+
+    private static void deleteFile(File file) {
+	if (file.isFile()) {
+	    file.delete();
+	} else {
+	    for (File subFile : file.listFiles()) {
+		deleteFile(subFile);
+	    }
+	    file.delete();
+	}
     }
 }
