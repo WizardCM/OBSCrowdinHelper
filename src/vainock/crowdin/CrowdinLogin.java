@@ -30,7 +30,7 @@ public class CrowdinLogin {
 	req.addParam("login", login);
 	req.addParam("password", password);
 	CrowdinResponse res = req.send().getCrowdinResponse();
-	if (loginSuccessful(res.getContent())) {
+	if (responseSuccessful(res.getContent())) {
 	    login_cid = res.getCookie("cid");
 	    login_csrf = csrf;
 	}
@@ -52,6 +52,8 @@ public class CrowdinLogin {
 	} catch (ParseException e) {
 	    e.printStackTrace();
 	}
+	if (responseSuccessful(obj.toString()) != null)
+	    return;
 
 	CrowdinRequest req2 = new CrowdinRequest();
 	req2.setProperty("Cookie", "csrf_token=" + csrf);
@@ -63,10 +65,11 @@ public class CrowdinLogin {
 	req2.addParam("mfa_code", mfaCode);
 	req2.addParam("mfa_hash", obj.get("mfa_hash").toString());
 	CrowdinResponse res2 = req2.send().getCrowdinResponse();
-	if (loginSuccessful(res2.getContent())) {
-	    login_cid = res2.getCookie("cid");
-	    login_csrf = csrf;
-	}
+	if (responseSuccessful(res2.getContent()) != true)
+	    return;
+
+	login_cid = res2.getCookie("cid");
+	login_csrf = csrf;
 	CrowdinRequest.clearCrowdinResponses();
     }
 
@@ -74,11 +77,12 @@ public class CrowdinLogin {
 	return !(login_cid == null && login_csrf == null);
     }
 
-    private static boolean loginSuccessful(String content) {
+    private static Boolean responseSuccessful(String content) {
+	System.out.println(content);
 	try {
-	    return (boolean) ((JSONObject) new JSONParser().parse(content)).get("success");
+	    return (Boolean) ((JSONObject) new JSONParser().parse(content)).get("success");
 	} catch (ParseException | NullPointerException e) {
-	    return false;
+	    return true;
 	}
     }
 
