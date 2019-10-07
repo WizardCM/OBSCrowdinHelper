@@ -4,6 +4,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.URL;
@@ -30,9 +31,6 @@ public class OBSCrowdinHelper {
     public static void main(String[] args) throws Exception {
 	CrowdinRequest.setMaxRunningRequests(50);
 	String rootPath = new File("").getAbsolutePath() + "/" + "OBSCrowdinHelper/";
-	for (File rootFile : new File(rootPath).listFiles()) {
-	    deleteFile(rootFile);
-	}
 	new File(rootPath).mkdirs();
 	Scanner scanner = new Scanner(System.in);
 	HashMap<String, ArrayList<String>> output = new HashMap<>();
@@ -61,12 +59,17 @@ public class OBSCrowdinHelper {
 	    } else
 		println("The login was not successful, check your entered login information and try again!");
 	}
-
 	println("Login successful!");
 	println("----------");
 	println("To start collecting all the information, press Enter.");
 	scanner.nextLine();
 	println("Start fetching all datas:");
+
+	println(" - clear OBSCrowdinHelper directory");
+
+	for (File file : new File(rootPath).listFiles())
+	    if (!file.getName().equals("Login"))
+		deleteFile(file);
 
 	println(" - get project members");
 
@@ -130,9 +133,8 @@ public class OBSCrowdinHelper {
 		String userName = (String) userObj.get("name");
 		String userLogin = (String) userObj.get("login");
 		if (!languagesArray.isEmpty()) {
-		    if (projectLanguageId == null) {
+		    if (projectLanguageId == null)
 			projectLanguageId = Short.valueOf(languagesArray.get(0).toString());
-		    }
 		    String userFullName;
 		    if (userName != null) {
 			if (userName.isEmpty()) {
@@ -197,34 +199,43 @@ public class OBSCrowdinHelper {
 
 	println(" - download build");
 
+	String buildFilePath = rootPath + "Translations.zip";
+
 	// download build
 	Files.copy(new URL("https://crowdin.com/backend/download/project/obs-studio.zip").openStream(),
-		new File(rootPath + "Translations.zip").toPath());
+		new File(buildFilePath).toPath());
 
-	println(" - unzip build");
+	println(" - unzip build and delete empty files");
 
 	// unzip build
-	ZipInputStream zipIn = new ZipInputStream(new FileInputStream(rootPath + "Translations.zip"));
+	ZipInputStream zipIn = new ZipInputStream(new FileInputStream(buildFilePath));
 	ZipEntry entry = zipIn.getNextEntry();
 	byte[] buffer = new byte[2048];
 	while (entry != null) {
 	    String filePath = rootPath + "Translations/" + entry.getName();
+	    File file = new File(filePath);
 	    if (entry.isDirectory())
-		new File(filePath).mkdirs();
+		file.mkdirs();
+	    int read = 0;
 	    if (!entry.isDirectory()) {
-		FileOutputStream fos = new FileOutputStream(new File(filePath));
-		int read = 0;
-		while ((read = zipIn.read(buffer, 0, buffer.length)) != -1) {
+		FileOutputStream fos = new FileOutputStream(file);
+		while ((read = zipIn.read(buffer, 0, buffer.length)) != -1)
 		    fos.write(buffer, 0, read);
-		}
 		fos.flush();
 		fos.close();
+		FileReader fr = new FileReader(filePath);
+		StringBuilder sb = new StringBuilder();
+		while ((read = fr.read()) != -1)
+		    sb.append(Character.valueOf((char) read));
+		fr.close();
+		if (sb.toString().replaceAll("(\\r|\\n)", "").length() == 0)
+		    file.delete();
 	    }
 	    zipIn.closeEntry();
 	    entry = zipIn.getNextEntry();
 	}
 	zipIn.close();
-	new File(rootPath + "Translations.zip").delete();
+	new File(buildFilePath).delete();
 
 	println("Finished!");
 	println("----------");
@@ -238,12 +249,11 @@ public class OBSCrowdinHelper {
     }
 
     private static void deleteFile(File file) {
-	if (file.isFile()) {
+	if (file.isFile() && file.exists()) {
 	    file.delete();
 	} else {
-	    for (File subFile : file.listFiles()) {
+	    for (File subFile : file.listFiles())
 		deleteFile(subFile);
-	    }
 	    file.delete();
 	}
     }
