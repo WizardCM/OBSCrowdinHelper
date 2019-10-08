@@ -78,7 +78,6 @@ public class CrowdinLogin {
     }
 
     private static Boolean responseSuccessful(String content) {
-	System.out.println(content);
 	try {
 	    return (Boolean) ((JSONObject) new JSONParser().parse(content)).get("success");
 	} catch (ParseException | NullPointerException e) {
