@@ -20,6 +20,7 @@ import java.util.zip.ZipInputStream;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import vainock.crowdin.CrowdinLogin;
 import vainock.crowdin.CrowdinRequest;
@@ -37,9 +38,42 @@ public class OBSCrowdinHelper {
 	HashMap<Short, String> projectLanguages = new HashMap<>();
 
 	// login
-	println("OBSCrowdinHelper started! - A login is required to continue!");
-
+	println("OBSCrowdinHelper started!");
 	boolean run = true;
+	int read;
+	File loginFile = new File(rootPath + "Login");
+	if (loginFile.exists()) {
+	    println("Try to use saved login information...");
+	    FileReader loginInformationFr = new FileReader(loginFile);
+	    StringBuilder loginInformationSb = new StringBuilder();
+	    while ((read = loginInformationFr.read()) != -1)
+		loginInformationSb.append(Character.valueOf((char) read));
+	    loginInformationFr.close();
+	    CrowdinLogin.login_csrf = loginInformationSb.toString().split(";")[0];
+	    CrowdinLogin.login_cid = loginInformationSb.toString().split(";")[1];
+	    if (checkIfValidUser()) {
+		println("The saved login information is valid, do you want to continue with this account to skip the login? Valid inputs: Yes/No");
+		boolean loginSkipRun = true;
+		while (loginSkipRun) {
+		    String input = scanner.nextLine();
+		    if (input.equalsIgnoreCase("yes")) {
+			loginSkipRun = false;
+			run = false;
+		    } else if (input.equalsIgnoreCase("no")) {
+			loginSkipRun = false;
+			loginFile.delete();
+		    } else
+			println("Please use a valid input: Yes/No");
+		}
+	    } else {
+		println("The saved login information is unvalid, please login!");
+		CrowdinLogin.login_csrf = null;
+		CrowdinLogin.login_cid = null;
+		loginFile.delete();
+	    }
+	} else
+	    println("A login is required to continue!");
+
 	while (run) {
 	    println("----------");
 	    println("Email:");
@@ -56,10 +90,16 @@ public class OBSCrowdinHelper {
 		CrowdinLogin.login(loginEmail, loginPassword, loginMfa);
 	    if (CrowdinLogin.loginSuccessful()) {
 		run = false;
+		println("Login successful!");
 	    } else
 		println("The login was not successful, check your entered login information and try again!");
 	}
-	println("Login successful!");
+
+	FileOutputStream loginFos = new FileOutputStream(loginFile);
+	loginFos.write((CrowdinLogin.login_csrf + ";" + CrowdinLogin.login_cid).getBytes());
+	loginFos.flush();
+	loginFos.close();
+
 	println("----------");
 	println("To start collecting all the information, press Enter.");
 	scanner.nextLine();
@@ -71,7 +111,7 @@ public class OBSCrowdinHelper {
 	    if (!file.getName().equals("Login"))
 		deleteFile(file);
 
-	println(" - get project members");
+	println(" - request project members");
 
 	// get project language names and ids
 	CrowdinRequest req1 = new CrowdinRequest();
@@ -98,7 +138,7 @@ public class OBSCrowdinHelper {
 
 	// get project members
 	int i = 1;
-	for (Short projectLanguageId : projectLanguages.keySet()) {
+	for (short projectLanguageId : projectLanguages.keySet()) {
 	    CrowdinRequest req = new CrowdinRequest();
 	    req.setMethod(HttpRequestMethod.POST);
 	    req.setUrl("backend/user_reports/get_top_members");
@@ -175,39 +215,41 @@ public class OBSCrowdinHelper {
 	out.flush();
 	out.close();
 
-	println(" - build project");
-
 	// build project
-	CrowdinRequest req2 = new CrowdinRequest();
-	req2.setUrl("backend/project_actions/export_project");
-	req2.setMethod(HttpRequestMethod.GET);
-	req2.addParam("project_id", "51028");
-	req2.send().getCrowdinResponse();
+	System.out.print(" - check account permissions: Account has ");
+	if (checkIfManager()) {
+	    println("enough permissions.");
+	    println(" - build project");
+	    CrowdinRequest req2 = new CrowdinRequest();
+	    req2.setUrl("backend/project_actions/export_project");
+	    req2.setMethod(HttpRequestMethod.GET);
+	    req2.addParam("project_id", "51028");
+	    req2.send().getCrowdinResponse();
 
-	run = true;
-	while (run) {
-	    CrowdinRequest req = new CrowdinRequest();
-	    req.setUrl("backend/project_actions/check_export_status");
-	    req.setMethod(HttpRequestMethod.GET);
-	    req.addParam("project_id", "51028");
-	    JSONObject statusObj = (JSONObject) new JSONParser().parse(req.send().getCrowdinResponse().getContent());
-	    if (Integer.valueOf(statusObj.get("progress").toString()) == 100) {
-		run = false;
-	    } else
-		Thread.sleep(1000);
-	}
-
-	println(" - download build");
-
-	String buildFilePath = rootPath + "Translations.zip";
+	    run = true;
+	    while (run) {
+		CrowdinRequest req = new CrowdinRequest();
+		req.setUrl("backend/project_actions/check_export_status");
+		req.setMethod(HttpRequestMethod.GET);
+		req.addParam("project_id", "51028");
+		JSONObject statusObj = (JSONObject) new JSONParser()
+			.parse(req.send().getCrowdinResponse().getContent());
+		if (Integer.valueOf(statusObj.get("progress").toString()) == 100) {
+		    run = false;
+		} else
+		    Thread.sleep(1000);
+	    }
+	} else
+	    println("not enough permissions, skip project build.");
 
 	// download build
+	println(" - download newest build");
+	String buildFilePath = rootPath + "Translations.zip";
 	Files.copy(new URL("https://crowdin.com/backend/download/project/obs-studio.zip").openStream(),
 		new File(buildFilePath).toPath());
 
-	println(" - unzip build and delete empty files");
-
 	// unzip build
+	println(" - unzip build and delete empty files");
 	ZipInputStream zipIn = new ZipInputStream(new FileInputStream(buildFilePath));
 	ZipEntry entry = zipIn.getNextEntry();
 	byte[] buffer = new byte[2048];
@@ -216,19 +258,18 @@ public class OBSCrowdinHelper {
 	    File file = new File(filePath);
 	    if (entry.isDirectory())
 		file.mkdirs();
-	    int read = 0;
 	    if (!entry.isDirectory()) {
-		FileOutputStream fos = new FileOutputStream(file);
+		FileOutputStream entryFos = new FileOutputStream(file);
 		while ((read = zipIn.read(buffer, 0, buffer.length)) != -1)
-		    fos.write(buffer, 0, read);
-		fos.flush();
-		fos.close();
-		FileReader fr = new FileReader(filePath);
-		StringBuilder sb = new StringBuilder();
-		while ((read = fr.read()) != -1)
-		    sb.append(Character.valueOf((char) read));
-		fr.close();
-		if (sb.toString().replaceAll("(\\r|\\n)", "").length() == 0)
+		    entryFos.write(buffer, 0, read);
+		entryFos.flush();
+		entryFos.close();
+		FileReader emptyFilesFr = new FileReader(filePath);
+		StringBuilder emptyFilesSb = new StringBuilder();
+		while ((read = emptyFilesFr.read()) != -1)
+		    emptyFilesSb.append(Character.valueOf((char) read));
+		emptyFilesFr.close();
+		if (emptyFilesSb.toString().replaceAll("(\\r|\\n)", "").length() == 0)
 		    file.delete();
 	    }
 	    zipIn.closeEntry();
@@ -255,6 +296,32 @@ public class OBSCrowdinHelper {
 	    for (File subFile : file.listFiles())
 		deleteFile(subFile);
 	    file.delete();
+	}
+    }
+
+    private static boolean checkIfManager() {
+	CrowdinRequest req = new CrowdinRequest();
+	req.setUrl("backend/project_actions/check_export_status");
+	req.setMethod(HttpRequestMethod.POST);
+	req.addParam("project_id", "51028");
+	try {
+	    return (boolean) ((JSONObject) new JSONParser().parse(req.send().getCrowdinResponse().getContent()))
+		    .get("success");
+	} catch (ParseException e) {
+	    return false;
+	}
+    }
+
+    private static boolean checkIfValidUser() {
+	CrowdinRequest req = new CrowdinRequest();
+	req.setUrl("backend/tasks/get_tasks_progress");
+	req.setMethod(HttpRequestMethod.GET);
+	req.addParam("project_id", "51028");
+	try {
+	    return (boolean) ((JSONObject) new JSONParser().parse(req.send().getCrowdinResponse().getContent()))
+		    .get("success");
+	} catch (ParseException e) {
+	    return false;
 	}
     }
 }
