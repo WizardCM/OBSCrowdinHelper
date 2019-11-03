@@ -66,7 +66,7 @@ public class OBSCrowdinHelper {
 			println("Please use a valid input: Yes/No");
 		}
 	    } else {
-		println("The saved login information is unvalid, please login!");
+		println("The saved login information is invalid, please login!");
 		CrowdinLogin.login_csrf = null;
 		CrowdinLogin.login_cid = null;
 		loginFile.delete();
