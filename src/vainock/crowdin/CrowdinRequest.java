@@ -1,33 +1,25 @@
 package vainock.crowdin;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.net.HttpCookie;
-import java.net.URL;
 import java.net.URLEncoder;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map.Entry;
 
-import javax.net.ssl.HttpsURLConnection;
+import okhttp3.FormBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class CrowdinRequest implements Runnable {
-
-    private static ArrayList<CrowdinResponse> responses = new ArrayList<>();
-    private static int maxRunningReqs = 1;
+    private static int maxRunningReqs = 50;
     private static int runningReqs = 0;
-    private HashMap<String, String> properties = new HashMap<>();
+    private final OkHttpClient httpClient = new OkHttpClient().newBuilder().followRedirects(true)
+	    .cookieJar(MyCookieJar.getInstance()).build();
+    private HashMap<String, String> headers = new HashMap<>();
     private HashMap<String, String> parameters = new HashMap<>();
+    private HashMap<String, String> formEntries = new HashMap<>();
     private String url;
-    private HttpRequestMethod method;
+    private CrowdinRequestMethod method;
     private Thread reqThread;
-
-    public CrowdinRequest() {
-
-    }
 
     public CrowdinRequest addParam(String name, String value) {
 	this.parameters.put(name, value);
@@ -37,6 +29,10 @@ public class CrowdinRequest implements Runnable {
     public CrowdinRequest removeParam(String name) {
 	this.parameters.remove(name);
 	return this;
+    }
+
+    public String getParam(String name) {
+	return parameters.get(name);
     }
 
     public HashMap<String, String> getParams() {
@@ -52,89 +48,95 @@ public class CrowdinRequest implements Runnable {
 	return this.url;
     }
 
-    public CrowdinRequest setMethod(HttpRequestMethod method) {
+    public CrowdinRequest setMethod(CrowdinRequestMethod method) {
 	this.method = method;
 	return this;
     }
 
-    public HttpRequestMethod getMethod() {
+    public CrowdinRequestMethod getMethod() {
 	return this.method;
     }
 
-    CrowdinRequest setProperty(String name, String value) {
-	this.properties.put(name, value);
+    void setHeader(String name, String value) {
+	this.headers.put(name, value);
+    }
+
+    String getHeader(String name) {
+	return headers.get(name);
+    }
+
+    public CrowdinRequest addFormEntry(String name, String value) {
+	formEntries.put(name, value);
 	return this;
     }
 
-    String getProperty(String name) {
-	return properties.get(name);
+    public CrowdinRequest removeFormEntry(String name) {
+	formEntries.remove(name);
+	return this;
     }
 
-    public CrowdinRequest send() {
+    public String getFormEntry(String name) {
+	return formEntries.get(name);
+    }
+
+    public HashMap<String, String> getFormEntries() {
+	return formEntries;
+    }
+
+    public void sendMultiple() {
 	while (runningReqs >= maxRunningReqs)
 	    waitMoment();
 	requestStarted();
 	reqThread = new Thread(this);
 	reqThread.start();
-	return this;
+    }
+
+    public CrowdinResponse send() {
+	while (runningReqs >= maxRunningReqs)
+	    waitMoment();
+	requestStarted();
+	reqThread = new Thread(this);
+	reqThread.start();
+	CrowdinResponse.clearResponses();
+	try {
+	    reqThread.join();
+	} catch (InterruptedException e) {
+	    e.printStackTrace();
+	}
+	return CrowdinResponse.getFirstResponse();
     }
 
     @Override
     public void run() {
-	CrowdinResponse response = new CrowdinResponse();
 	try {
 	    StringBuilder resultSb = new StringBuilder();
 	    resultSb.append('?');
 	    for (Entry<String, String> entry : parameters.entrySet()) {
-		try {
-		    resultSb.append(URLEncoder.encode(entry.getKey(), "UTF-8"));
-		    resultSb.append("=");
-		    resultSb.append(URLEncoder.encode(entry.getValue(), "UTF-8"));
-		    resultSb.append("&");
-		} catch (UnsupportedEncodingException e) {
-		    e.printStackTrace();
-		}
+		resultSb.append(URLEncoder.encode(entry.getKey(), "utf-8"));
+		resultSb.append("=");
+		resultSb.append(URLEncoder.encode(entry.getValue(), "utf-8"));
+		resultSb.append("&");
 	    }
 	    resultSb.setLength(resultSb.length() - 1);
-
-	    URL url = new URL("https://crowdin.com/" + this.url + resultSb);
-	    HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
-	    con.setRequestMethod(this.method.toString());
-	    if (properties.size() > 0) {
-		for (String key : properties.keySet())
-		    con.setRequestProperty(key, properties.get(key));
-	    } else {
-		con.setRequestProperty("cookie",
-			"csrf_token=" + CrowdinLogin.login_csrf + "; cid=" + CrowdinLogin.login_cid);
-		con.setRequestProperty("x-csrf-token", CrowdinLogin.login_csrf);
-	    }
-
-	    con.setDoOutput(true);
-
-	    BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-	    String inputLine;
-	    StringBuilder contentSb = new StringBuilder();
-	    while ((inputLine = in.readLine()) != null)
-		contentSb.append(inputLine + "\n");
-
-	    in.close();
-	    response.setContent(contentSb.toString());
-
-	    if (con.getHeaderField("Set-Cookie") != null) {
-		String cookiesHeader = con.getHeaderField("Set-Cookie");
-		List<HttpCookie> cookies = HttpCookie.parse(cookiesHeader);
-		for (HttpCookie cookie : cookies)
-		    response.addCookie(cookie.getName(), cookie.getValue());
-	    }
-
-	    con.disconnect();
-
-	} catch (IOException e) {
+	    Request.Builder reqBuilder = new Request.Builder();
+	    reqBuilder.url("https://" + url + resultSb);
+	    for (Entry<String, String> entry : headers.entrySet())
+		reqBuilder.header(entry.getKey(), entry.getValue());
+	    reqBuilder.header("x-csrf-token", MyCookieJar.getInstance().getCookieValue("csrf_token"));
+	    if (method.equals(CrowdinRequestMethod.POST)) {
+		FormBody.Builder formBody = new FormBody.Builder();
+		for (Entry<String, String> entry : formEntries.entrySet())
+		    formBody.add(entry.getKey(), entry.getValue());
+		reqBuilder.post(formBody.build());
+	    } else
+		reqBuilder.get();
+	    Response response = httpClient.newCall(reqBuilder.build()).execute();
+	    CrowdinResponse.addResponse(new CrowdinResponse().setContent(response.body().string())
+		    .setUrl(response.request().url().toString()));
+	    requestFinished();
+	} catch (Exception e) {
 	    e.printStackTrace();
 	}
-
-	addCrowdinResponse(response);
-	requestFinished();
     }
 
     public static int getMaxRunningRequests() {
@@ -155,28 +157,6 @@ public class CrowdinRequest implements Runnable {
 
     private synchronized void requestStarted() {
 	runningReqs++;
-    }
-
-    public CrowdinResponse getCrowdinResponse() {
-	clearCrowdinResponses();
-	try {
-	    reqThread.join();
-	} catch (InterruptedException e) {
-	    e.printStackTrace();
-	}
-	return responses.get(0);
-    }
-
-    public static ArrayList<CrowdinResponse> getCrowdinResponses() {
-	return responses;
-    }
-
-    public static void clearCrowdinResponses() {
-	responses.clear();
-    }
-
-    private synchronized void addCrowdinResponse(CrowdinResponse crowdinResponse) {
-	responses.add(crowdinResponse);
     }
 
     public static void waitForEveryRequest() {

@@ -1,6 +1,6 @@
 package vainock.crowdin;
 
-public enum HttpRequestMethod {
+public enum CrowdinRequestMethod {
 
     GET, POST;
 
