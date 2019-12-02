@@ -137,17 +137,17 @@ public class OBSCrowdinHelper {
 	    CrowdinRequest req = new CrowdinRequest();
 	    req.setMethod(CrowdinRequestMethod.POST);
 	    req.setUrl("crowdin.com/backend/user_reports/get_top_members");
-	    req.addParam("project_id", "51028");
-	    req.addParam("report_mode", "words");
-	    req.addParam("language_id", String.valueOf(projectLanguageId));
-	    req.addParam("date_from", "2014-07-07");
-	    req.addParam("date_to", "2030-01-01");
-	    req.addParam("page", "1");
-	    req.addParam("sortname", "translated");
-	    req.addParam("sortorder", "desc");
-	    req.addParam("rp", "50");
-	    req.addParam("filter", "");
-	    req.addParam("request", String.valueOf(i));
+	    req.addFormEntry("project_id", "51028");
+	    req.addFormEntry("report_mode", "words");
+	    req.addFormEntry("language_id", String.valueOf(projectLanguageId));
+	    req.addFormEntry("date_from", "2014-07-07");
+	    req.addFormEntry("date_to", "2030-01-01");
+	    req.addFormEntry("page", "1");
+	    req.addFormEntry("sortname", "translated");
+	    req.addFormEntry("sortorder", "desc");
+	    req.addFormEntry("rp", "50");
+	    req.addFormEntry("filter", "");
+	    req.addFormEntry("request", String.valueOf(i));
 	    req.sendMultiple();
 	    i++;
 	}
