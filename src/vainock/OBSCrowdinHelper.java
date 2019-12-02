@@ -31,7 +31,7 @@ import vainock.crowdin.MyCookieJar;
 public class OBSCrowdinHelper {
 
     public static void main(String[] args) throws Exception {
-	String rootPath = new File("").getAbsolutePath() + "/" + "OBSCrowdinHelper/";
+	String rootPath = new File("").getAbsolutePath() + File.separator;
 	new File(rootPath).mkdirs();
 	Scanner scanner = new Scanner(System.in);
 	HashMap<String, ArrayList<String>> output = new HashMap<>();
@@ -103,7 +103,7 @@ public class OBSCrowdinHelper {
 	println(" - clear OBSCrowdinHelper directory");
 
 	for (File file : new File(rootPath).listFiles())
-	    if (!file.getName().equals("Login"))
+	    if (file.getName().equals("Translators.txt") || file.getName().equals("Translations"))
 		deleteFile(file);
 
 	println(" - request project members");
@@ -248,7 +248,7 @@ public class OBSCrowdinHelper {
 	ZipEntry entry = zipIn.getNextEntry();
 	byte[] buffer = new byte[2048];
 	while (entry != null) {
-	    String filePath = rootPath + "Translations/" + entry.getName();
+	    String filePath = rootPath + "Translations" + File.separator + entry.getName();
 	    File file = new File(filePath);
 	    if (entry.isDirectory())
 		file.mkdirs();
