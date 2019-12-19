@@ -211,9 +211,9 @@ public class OBSCrowdinHelper {
 	out.close();
 
 	// build project
-	System.out.print(" - check account permissions: Account has ");
+	System.out.print(" - check account permissions: ");
 	if (checkIfManager()) {
-	    println("enough permissions.");
+	    println("Account has enough permissions.");
 	    println(" - build project");
 	    CrowdinRequest req2 = new CrowdinRequest();
 	    req2.setUrl("crowdin.com/backend/project_actions/export_project");
@@ -234,7 +234,7 @@ public class OBSCrowdinHelper {
 		    Thread.sleep(1000);
 	    }
 	} else
-	    println("not enough permissions, skip project build.");
+	    println("Account has not enough permissions, skip project build.");
 
 	// download build
 	println(" - download newest build");
