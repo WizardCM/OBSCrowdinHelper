@@ -119,13 +119,8 @@ public class OBSCrowdinHelper {
 	req1.addParam("original_url", "https://crowdin.com/translate/obs-studio/all/en-de");
 	CrowdinResponse res1 = req1.send();
 
-	JSONObject editorObj = (JSONObject) new JSONParser().parse(res1.getContent());
-	JSONObject dataObj = (JSONObject) editorObj.get("data");
-	JSONObject initEditorObj = (JSONObject) dataObj.get("init_editor");
-	JSONObject projectObj = (JSONObject) initEditorObj.get("project");
-	JSONArray targetLanguagesArray = (JSONArray) projectObj.get("target_languages");
-
-	for (Object language : targetLanguagesArray) {
+	for (Object language : (JSONArray) ((JSONObject) ((JSONObject) ((JSONObject) ((JSONObject) new JSONParser()
+		.parse(res1.getContent())).get("data")).get("init_editor")).get("project")).get("target_languages")) {
 	    JSONObject languageObj = (JSONObject) language;
 	    projectLanguages.put(Short.valueOf(languageObj.get("id").toString()), languageObj.get("name").toString());
 	}
@@ -158,10 +153,8 @@ public class OBSCrowdinHelper {
 	for (CrowdinResponse res : CrowdinResponse.getResponses()) {
 	    ArrayList<String> languageUsers = new ArrayList<>();
 
-	    JSONObject resObj = (JSONObject) new JSONParser().parse(res.getContent());
 	    Short projectLanguageId = null;
-	    JSONArray rowsArray = (JSONArray) resObj.get("rows");
-	    for (Object user : rowsArray) {
+	    for (Object user : (JSONArray) ((JSONObject) new JSONParser().parse(res.getContent())).get("rows")) {
 		JSONObject rowObj = (JSONObject) user;
 		JSONObject userObj = (JSONObject) rowObj.get("_user");
 		JSONArray languagesArray = (JSONArray) rowObj.get("languages");
