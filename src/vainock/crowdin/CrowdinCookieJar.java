@@ -8,16 +8,16 @@ import okhttp3.Cookie;
 import okhttp3.CookieJar;
 import okhttp3.HttpUrl;
 
-public class MyCookieJar implements CookieJar {
-    private static MyCookieJar myCookieJar = new MyCookieJar();
+public class CrowdinCookieJar implements CookieJar {
+    private static CrowdinCookieJar myCookieJar = new CrowdinCookieJar();
     private List<Cookie> cookies = new ArrayList<>();
 
-    private MyCookieJar() {
+    private CrowdinCookieJar() {
 	cookies.add(new Cookie.Builder().name("csrf_token").value(getRandomString(10)).domain("crowdin.com").path("/")
 		.build());
     }
 
-    public static MyCookieJar getInstance() {
+    public static CrowdinCookieJar getInstance() {
 	return myCookieJar;
     }
 

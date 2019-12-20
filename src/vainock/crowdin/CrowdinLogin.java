@@ -14,7 +14,7 @@ public class CrowdinLogin {
 	if (!(mfaCode.isEmpty() || mfaCode == null))
 	    req.addFormEntry("one_time_password", mfaCode);
 	req.send();
-	MyCookieJar.getInstance().clearCookiesFromLogin();
+	CrowdinCookieJar.getInstance().clearCookiesFromLogin();
 	CrowdinResponse.clearResponses();
     }
 

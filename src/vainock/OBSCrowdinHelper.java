@@ -22,11 +22,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import vainock.crowdin.CrowdinLogin;
-import vainock.crowdin.CrowdinRequest;
-import vainock.crowdin.CrowdinRequestMethod;
-import vainock.crowdin.CrowdinResponse;
-import vainock.crowdin.MyCookieJar;
+import vainock.crowdin.*;
 
 public class OBSCrowdinHelper {
 
@@ -36,7 +32,7 @@ public class OBSCrowdinHelper {
 	Scanner scanner = new Scanner(System.in);
 	HashMap<String, ArrayList<String>> output = new HashMap<>();
 	HashMap<Short, String> projectLanguages = new HashMap<>();
-	MyCookieJar cj = MyCookieJar.getInstance();
+	CrowdinCookieJar cj = CrowdinCookieJar.getInstance();
 
 	// login
 	println("OBSCrowdinHelper started!");

@@ -13,7 +13,7 @@ public class CrowdinRequest implements Runnable {
     private static int maxRunningReqs = 50;
     private static int runningReqs = 0;
     private final OkHttpClient httpClient = new OkHttpClient().newBuilder().followRedirects(true)
-	    .cookieJar(MyCookieJar.getInstance()).build();
+	    .cookieJar(CrowdinCookieJar.getInstance()).build();
     private HashMap<String, String> headers = new HashMap<>();
     private HashMap<String, String> parameters = new HashMap<>();
     private HashMap<String, String> formEntries = new HashMap<>();
@@ -122,7 +122,7 @@ public class CrowdinRequest implements Runnable {
 	    reqBuilder.url("https://" + url + resultSb);
 	    for (Entry<String, String> entry : headers.entrySet())
 		reqBuilder.header(entry.getKey(), entry.getValue());
-	    reqBuilder.header("x-csrf-token", MyCookieJar.getInstance().getCookieValue("csrf_token"));
+	    reqBuilder.header("x-csrf-token", CrowdinCookieJar.getInstance().getCookieValue("csrf_token"));
 	    if (method.equals(CrowdinRequestMethod.POST)) {
 		FormBody.Builder formBody = new FormBody.Builder();
 		for (Entry<String, String> entry : formEntries.entrySet())
