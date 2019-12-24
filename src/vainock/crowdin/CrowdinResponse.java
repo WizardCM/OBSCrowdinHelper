@@ -4,8 +4,7 @@ import java.util.ArrayList;
 
 public class CrowdinResponse {
     private static ArrayList<CrowdinResponse> responses = new ArrayList<>();
-    private String content;
-    private String url;
+    private String content, url;
 
     CrowdinResponse() {
 

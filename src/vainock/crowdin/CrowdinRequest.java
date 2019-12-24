@@ -10,13 +10,11 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class CrowdinRequest implements Runnable {
-    private static int maxRunningReqs = 50;
-    private static int runningReqs = 0;
+    private static int maxRunningReqs = 50, runningReqs = 0;
     private final OkHttpClient httpClient = new OkHttpClient().newBuilder().followRedirects(true)
 	    .cookieJar(CrowdinCookieJar.getInstance()).build();
-    private HashMap<String, String> headers = new HashMap<>();
-    private HashMap<String, String> parameters = new HashMap<>();
-    private HashMap<String, String> formEntries = new HashMap<>();
+    private HashMap<String, String> headers = new HashMap<>(), parameters = new HashMap<>(),
+	    formEntries = new HashMap<>();
     private String url;
     private CrowdinRequestMethod method;
     private Thread reqThread;
