@@ -3,8 +3,10 @@ package vainock;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.URL;
@@ -25,28 +27,34 @@ import org.json.simple.parser.ParseException;
 import vainock.crowdin.*;
 
 public class OBSCrowdinHelper {
+    private static Scanner scanner = new Scanner(System.in);
 
-    public static void main(String[] args) throws Exception {
-	String rootPath = new File("").getAbsolutePath() + File.separator;
-	new File(rootPath).mkdirs();
-	Scanner scanner = new Scanner(System.in);
-	HashMap<String, ArrayList<String>> output = new HashMap<>();
-	HashMap<Short, String> projectLanguages = new HashMap<>();
-	CrowdinCookieJar cj = CrowdinCookieJar.getInstance();
-
+    public static void main(String[] args) {
 	// login
 	println("OBSCrowdinHelper started!");
+	CrowdinCookieJar cj = CrowdinCookieJar.getInstance();
 	boolean run = true;
 	int read;
+	String rootPath = new File("").getAbsolutePath() + File.separator;
+	new File(rootPath).mkdirs();
 	File loginFile = new File(rootPath + "Login");
 	if (loginFile.exists()) {
 	    println("Try to use saved login information...");
-	    FileReader loginInformationFr = new FileReader(loginFile);
+	    FileReader loginInformationFr = null;
+	    try {
+		loginInformationFr = new FileReader(loginFile);
+	    } catch (FileNotFoundException e) {
+		cancel("The file '" + loginFile.getAbsolutePath() + "' wasn't found.", 1);
+	    }
 	    StringBuilder loginInformationSb = new StringBuilder();
-	    while ((read = loginInformationFr.read()) != -1)
-		loginInformationSb.append(Character.valueOf((char) read));
-	    cj.setCookies(loginInformationSb.toString());
-	    loginInformationFr.close();
+	    try {
+		while ((read = loginInformationFr.read()) != -1)
+		    loginInformationSb.append(Character.valueOf((char) read));
+		cj.setCookies(loginInformationSb.toString());
+		loginInformationFr.close();
+	    } catch (IOException e) {
+		cancel("The file '" + loginFile + "' couldn't be read.", 2);
+	    }
 	    if (checkIfValidUser()) {
 		println("The saved login information is valid, do you want to continue with this account to skip the login? Valid inputs: Yes/No");
 		boolean loginSkipRun = true;
@@ -86,10 +94,14 @@ public class OBSCrowdinHelper {
 		println("The login was not successful, check your entered login information and try again!");
 	}
 
-	FileOutputStream loginFos = new FileOutputStream(loginFile);
-	loginFos.write(cj.getCookiesRaw().getBytes());
-	loginFos.flush();
-	loginFos.close();
+	try {
+	    FileOutputStream loginFos = new FileOutputStream(loginFile);
+	    loginFos.write(cj.getCookiesRaw().getBytes());
+	    loginFos.flush();
+	    loginFos.close();
+	} catch (IOException e) {
+	    cancel("The file '" + loginFile.getAbsolutePath() + "' couldn't be saved.", 3);
+	}
 
 	println("----------");
 	println("To start collecting all the information, press Enter.");
@@ -115,10 +127,17 @@ public class OBSCrowdinHelper {
 	req1.addParam("original_url", "https://crowdin.com/translate/obs-studio/all/en-de");
 	CrowdinResponse res1 = req1.send();
 
-	for (Object language : (JSONArray) ((JSONObject) ((JSONObject) ((JSONObject) ((JSONObject) new JSONParser()
-		.parse(res1.getContent())).get("data")).get("init_editor")).get("project")).get("target_languages")) {
-	    JSONObject languageObj = (JSONObject) language;
-	    projectLanguages.put(Short.valueOf(languageObj.get("id").toString()), languageObj.get("name").toString());
+	HashMap<Short, String> projectLanguages = new HashMap<>();
+	try {
+	    for (Object language : (JSONArray) ((JSONObject) ((JSONObject) ((JSONObject) ((JSONObject) new JSONParser()
+		    .parse(res1.getContent())).get("data")).get("init_editor")).get("project"))
+			    .get("target_languages")) {
+		JSONObject languageObj = (JSONObject) language;
+		projectLanguages.put(Short.valueOf(languageObj.get("id").toString()),
+			languageObj.get("name").toString());
+	    }
+	} catch (ParseException e) {
+	    cancel("Received data couldn't be parsed.", 4);
 	}
 	CrowdinResponse.clearResponses();
 
@@ -146,29 +165,34 @@ public class OBSCrowdinHelper {
 	CrowdinRequest.waitForEveryRequest();
 
 	// read and format project member's name
+	HashMap<String, ArrayList<String>> output = new HashMap<>();
 	for (CrowdinResponse res : CrowdinResponse.getResponses()) {
 	    ArrayList<String> languageUsers = new ArrayList<>();
 
 	    Short projectLanguageId = null;
-	    for (Object user : (JSONArray) ((JSONObject) new JSONParser().parse(res.getContent())).get("rows")) {
-		JSONObject rowObj = (JSONObject) user;
-		JSONObject userObj = (JSONObject) rowObj.get("_user");
-		JSONArray languagesArray = (JSONArray) rowObj.get("languages");
-		String userName = (String) userObj.get("name");
-		String userLogin = (String) userObj.get("login");
-		if (!languagesArray.isEmpty()) {
-		    if (projectLanguageId == null)
-			projectLanguageId = Short.valueOf(languagesArray.get(0).toString());
-		    String userFullName;
-		    if (userName != null) {
-			if (userName.isEmpty()) {
-			    userFullName = userLogin;
+	    try {
+		for (Object user : (JSONArray) ((JSONObject) new JSONParser().parse(res.getContent())).get("rows")) {
+		    JSONObject rowObj = (JSONObject) user;
+		    JSONObject userObj = (JSONObject) rowObj.get("_user");
+		    JSONArray languagesArray = (JSONArray) rowObj.get("languages");
+		    String userName = (String) userObj.get("name");
+		    String userLogin = (String) userObj.get("login");
+		    if (!languagesArray.isEmpty()) {
+			if (projectLanguageId == null)
+			    projectLanguageId = Short.valueOf(languagesArray.get(0).toString());
+			String userFullName;
+			if (userName != null) {
+			    if (userName.isEmpty()) {
+				userFullName = userLogin;
+			    } else
+				userFullName = userName + " (" + userLogin + ")";
 			} else
-			    userFullName = userName + " (" + userLogin + ")";
-		    } else
-			userFullName = userLogin;
-		    languageUsers.add(userFullName);
+			    userFullName = userLogin;
+			languageUsers.add(userFullName);
+		    }
 		}
+	    } catch (ParseException e) {
+		cancel("Received data couldn't be parsed.", 5);
 	    }
 	    if (projectLanguageId != null)
 		output.put(projectLanguages.get(projectLanguageId), languageUsers);
@@ -193,11 +217,16 @@ public class OBSCrowdinHelper {
 	}
 	resultSb.deleteCharAt(resultSb.length() - 1);
 
-	Writer out = new BufferedWriter(new OutputStreamWriter(
-		new FileOutputStream(new File(rootPath + "Translators.txt")), StandardCharsets.UTF_8));
-	out.append(resultSb.toString());
-	out.flush();
-	out.close();
+	File translatorsFile = new File(rootPath + "Translators.txt");
+	try {
+	    Writer out = new BufferedWriter(
+		    new OutputStreamWriter(new FileOutputStream(translatorsFile), StandardCharsets.UTF_8));
+	    out.append(resultSb.toString());
+	    out.flush();
+	    out.close();
+	} catch (IOException e) {
+	    cancel("The file " + translatorsFile.getAbsolutePath() + " couldn't be saved.", 6);
+	}
 
 	// build project
 	System.out.print(" - check account permissions: ");
@@ -216,60 +245,100 @@ public class OBSCrowdinHelper {
 		req.setUrl("crowdin.com/backend/project_actions/check_export_status");
 		req.setMethod(CrowdinRequestMethod.GET);
 		req.addParam("project_id", "51028");
-		JSONObject statusObj = (JSONObject) new JSONParser().parse(req.send().getContent());
+		JSONObject statusObj = null;
+		try {
+		    statusObj = (JSONObject) new JSONParser().parse(req.send().getContent());
+		} catch (ParseException e1) {
+		    cancel("Received data couldn't be parsed.", 7);
+		}
 		if (Integer.valueOf(statusObj.get("progress").toString()) == 100) {
 		    run = false;
 		} else
-		    Thread.sleep(1000);
+		    try {
+			Thread.sleep(1000);
+		    } catch (InterruptedException e) {
+			cancel("There was a problem with a thread.", 8);
+		    }
 	    }
 	} else
 	    println("Account has not enough permissions, skip project build.");
 
 	// download build
 	println(" - download newest build");
-	String buildFilePath = rootPath + "Translations.zip";
-	Files.copy(new URL("https://crowdin.com/backend/download/project/obs-studio.zip").openStream(),
-		new File(buildFilePath).toPath());
+	File buildFile = new File(rootPath + "Translations.zip");
+	try {
+	    Files.copy(new URL("https://crowdin.com/backend/download/project/obs-studio.zip").openStream(),
+		    buildFile.toPath());
+	} catch (IOException e) {
+	    cancel("The build file couldn't be downloaded.", 9);
+	}
 
 	// unzip build
 	println(" - unzip build and delete empty files");
-	ZipInputStream zipIn = new ZipInputStream(new FileInputStream(buildFilePath));
-	ZipEntry entry = zipIn.getNextEntry();
-	byte[] buffer = new byte[2048];
-	while (entry != null) {
-	    String filePath = rootPath + "Translations" + File.separator + entry.getName();
-	    File file = new File(filePath);
-	    if (entry.isDirectory())
-		file.mkdirs();
-	    if (!entry.isDirectory()) {
-		FileOutputStream entryFos = new FileOutputStream(file);
-		while ((read = zipIn.read(buffer, 0, buffer.length)) != -1)
-		    entryFos.write(buffer, 0, read);
-		entryFos.flush();
-		entryFos.close();
-		FileReader emptyFilesFr = new FileReader(filePath);
-		StringBuilder emptyFilesSb = new StringBuilder();
-		while ((read = emptyFilesFr.read()) != -1)
-		    emptyFilesSb.append(Character.valueOf((char) read));
-		emptyFilesFr.close();
-		if (emptyFilesSb.toString().replaceAll("(\\r|\\n)", "").length() == 0)
-		    file.delete();
-	    }
-	    zipIn.closeEntry();
-	    entry = zipIn.getNextEntry();
+	ZipInputStream zipIn = null;
+	try {
+	    zipIn = new ZipInputStream(new FileInputStream(buildFile));
+	} catch (FileNotFoundException e) {
+	    cancel("The file '" + buildFile.getAbsolutePath() + "' wasn't found.", 10);
 	}
-	zipIn.close();
-	new File(buildFilePath).delete();
+	ZipEntry entry = null;
+	try {
+	    entry = zipIn.getNextEntry();
+	    byte[] buffer = new byte[2048];
+	    while (entry != null) {
+		String filePath = rootPath + "Translations" + File.separator + entry.getName();
+		File file = new File(filePath);
+		if (entry.isDirectory())
+		    file.mkdirs();
+		if (!entry.isDirectory()) {
+		    try {
+			FileOutputStream entryFos = new FileOutputStream(file);
+			while ((read = zipIn.read(buffer, 0, buffer.length)) != -1)
+			    entryFos.write(buffer, 0, read);
+			entryFos.flush();
+			entryFos.close();
+		    } catch (IOException e) {
+			cancel("The file " + file.getAbsolutePath() + " couldn't be saved.", 11);
+		    }
+		    try {
+			FileReader emptyFilesFr = new FileReader(filePath);
+			StringBuilder emptyFilesSb = new StringBuilder();
+			while ((read = emptyFilesFr.read()) != -1)
+			    emptyFilesSb.append(Character.valueOf((char) read));
+			emptyFilesFr.close();
+			if (emptyFilesSb.toString().replaceAll("(\\r|\\n)", "").length() == 0)
+			    file.delete();
+		    } catch (IOException e) {
+			cancel("The file " + file.getAbsolutePath() + " couldn't be read.", 12);
+		    }
+		}
+		zipIn.closeEntry();
+		entry = zipIn.getNextEntry();
+	    }
+	    zipIn.close();
+	} catch (IOException e) {
+	    cancel("There was an error unzipping the build.", 13);
+	}
+	buildFile.delete();
 
 	println("Finished!");
 	println("----------");
 	println("Press Enter to close the program.");
 	scanner.nextLine();
-	scanner.close();
     }
 
     private static void println(String text) {
 	System.out.println(text);
+    }
+
+    private static void cancel(String reason, int code) {
+	println("----- An error occured: -----");
+	println(reason);
+	println("----------");
+	println("Please close the program and try again. If this doesn't help, contact the developer and provide the error code "
+		+ code + ": contact.vainock@gmail.com");
+	scanner.nextLine();
+	System.exit(0);
     }
 
     private static void deleteFile(File file) {
