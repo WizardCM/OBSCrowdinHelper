@@ -24,7 +24,7 @@ public class CrowdinCookieJar implements CookieJar {
 	@Override
 	public List<Cookie> loadForRequest(HttpUrl url) {
 		if (cookies == null)
-			return new ArrayList<Cookie>();
+			return new ArrayList<>();
 		return cookies;
 	}
 

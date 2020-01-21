@@ -30,7 +30,7 @@ public class CrowdinResponse {
 	}
 
 	static List<CrowdinResponse> getResponses() {
-		List<CrowdinResponse> res = new ArrayList<CrowdinResponse>(responses);
+		List<CrowdinResponse> res = new ArrayList<>(responses);
 		responses.clear();
 		return res;
 	}
