@@ -13,8 +13,7 @@ public class CrowdinCookieJar implements CookieJar {
 	private List<Cookie> cookies = new ArrayList<>();
 
 	private CrowdinCookieJar() {
-		cookies.add(
-				new Cookie.Builder().name("csrf_token").value(getRandomString(10)).domain("crowdin.com").path("/").build());
+		cookies.add(new Cookie.Builder().name("csrf_token").value(getRandomString(10)).domain("crowdin.com").path("/").build());
 	}
 
 	public static CrowdinCookieJar getInstance() {

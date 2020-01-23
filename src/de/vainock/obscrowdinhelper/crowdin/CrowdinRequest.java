@@ -15,8 +15,7 @@ import okhttp3.Response;
 
 public class CrowdinRequest implements Runnable {
 	private static int maxRunningReqs = 50;
-	private final OkHttpClient httpClient = new OkHttpClient().newBuilder().followRedirects(true)
-			.cookieJar(CrowdinCookieJar.getInstance()).build();
+	private final OkHttpClient httpClient = new OkHttpClient().newBuilder().followRedirects(true).cookieJar(CrowdinCookieJar.getInstance()).build();
 	private Map<String, String> headers = new HashMap<>(), parameters = new HashMap<>(), formEntries = new HashMap<>();
 	private String url;
 	private CrowdinRequestMethod method;
@@ -123,8 +122,7 @@ public class CrowdinRequest implements Runnable {
 			} else
 				reqBuilder.get();
 			Response response = httpClient.newCall(reqBuilder.build()).execute();
-			CrowdinResponse.addResponse(
-					new CrowdinResponse().setContent(response.body().string()).setUrl(response.request().url().toString()));
+			CrowdinResponse.addResponse(new CrowdinResponse().setContent(response.body().string()).setUrl(response.request().url().toString()));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
