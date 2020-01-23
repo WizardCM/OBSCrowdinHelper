@@ -149,7 +149,7 @@ public class OBSCrowdinHelper {
 		}
 
 		// get project members
-		// int i = 1;
+		int i = 1;
 		List<CrowdinRequest> requests = new ArrayList<>();
 		for (short projectLanguageId : projectLanguages.keySet()) {
 			CrowdinRequest req = new CrowdinRequest();
@@ -165,8 +165,8 @@ public class OBSCrowdinHelper {
 			req.addFormEntry("sortorder", "desc");
 			req.addFormEntry("rp", "50");
 			req.addFormEntry("filter", "");
-			// req.addFormEntry("request", String.valueOf(i));
-			// i++;
+			req.addFormEntry("request", String.valueOf(i));
+			i++;
 			requests.add(req);
 		}
 
@@ -345,7 +345,7 @@ public class OBSCrowdinHelper {
 		println("Please also provide the error code " + code
 				+ " and the following error message which will help to identify and fix the bug:");
 		StringWriter sw = new StringWriter();
-		PrintWriter pw = new PrintWriter(new StringWriter());
+		PrintWriter pw = new PrintWriter(sw);
 		e.printStackTrace(pw);
 		println(sw.toString());
 		scanner.nextLine();
