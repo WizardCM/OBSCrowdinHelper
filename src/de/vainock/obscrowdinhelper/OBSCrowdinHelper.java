@@ -31,6 +31,7 @@ import de.vainock.obscrowdinhelper.crowdin.CrowdinLogin;
 import de.vainock.obscrowdinhelper.crowdin.CrowdinRequest;
 import de.vainock.obscrowdinhelper.crowdin.CrowdinRequestMethod;
 import de.vainock.obscrowdinhelper.crowdin.CrowdinResponse;
+import okhttp3.Cookie;
 
 public class OBSCrowdinHelper {
 	private static Scanner scanner = new Scanner(System.in);
@@ -52,7 +53,12 @@ public class OBSCrowdinHelper {
 				StringBuilder loginInformationSb = new StringBuilder();
 				while ((read = loginInformationFr.read()) != -1)
 					loginInformationSb.append(Character.valueOf((char) read));
-				cj.setCookies(loginInformationSb.toString());
+				List<Cookie> cookies = new ArrayList<>();
+				for (String cookieRaw : loginInformationSb.toString().split("\n")) {
+					String[] cookie = cookieRaw.split(";");
+					cookies.add(new Cookie.Builder().name(cookie[0]).value(cookie[1]).domain(cookie[2]).path("/").build());
+				}
+				cj.setCookies(cookies);
 				loginInformationFr.close();
 				if (checkIfValidUser()) {
 					println("The saved login information is valid, do you want to continue with this account to skip the login? Valid inputs: Yes/No");
@@ -93,7 +99,10 @@ public class OBSCrowdinHelper {
 					println("The login was not successful, check your entered login information and try again!");
 			}
 			FileOutputStream loginFos = new FileOutputStream(loginFile);
-			loginFos.write(cj.getCookiesRaw().getBytes());
+			StringBuilder cookiesSB = new StringBuilder();
+			for (Cookie cookie : cj.getCookies())
+				cookiesSB.append(cookie.name() + ";" + cookie.value() + ";" + cookie.domain() + "\n");
+			loginFos.write(cookiesSB.toString().getBytes());
 			loginFos.flush();
 			loginFos.close();
 
@@ -113,11 +122,11 @@ public class OBSCrowdinHelper {
 			CrowdinRequest req1 = new CrowdinRequest();
 			req1.setUrl("crowdin.com/backend/translate/get_editor_data");
 			req1.setMethod(CrowdinRequestMethod.GET);
-			req1.addParam("editor_mode", "translate");
-			req1.addParam("project_identifier", "obs-studio");
-			req1.addParam("file_id", "all");
-			req1.addParam("languages", "en-de");
-			req1.addParam("original_url", "https://crowdin.com/translate/obs-studio/all/en-de");
+			req1.setParam("editor_mode", "translate");
+			req1.setParam("project_identifier", "obs-studio");
+			req1.setParam("file_id", "all");
+			req1.setParam("languages", "en-de");
+			req1.setParam("original_url", "https://crowdin.com/translate/obs-studio/all/en-de");
 			CrowdinResponse res1 = req1.send();
 
 			Map<Short, String> projectLanguages = new HashMap<>();
@@ -134,17 +143,17 @@ public class OBSCrowdinHelper {
 				CrowdinRequest req = new CrowdinRequest();
 				req.setMethod(CrowdinRequestMethod.POST);
 				req.setUrl("crowdin.com/backend/user_reports/get_top_members");
-				req.addFormEntry("project_id", "51028");
-				req.addFormEntry("report_mode", "words");
-				req.addFormEntry("language_id", String.valueOf(projectLanguageId));
-				req.addFormEntry("date_from", "2014-07-07");
-				req.addFormEntry("date_to", "2030-01-01");
-				req.addFormEntry("page", "1");
-				req.addFormEntry("sortname", "translated");
-				req.addFormEntry("sortorder", "desc");
-				req.addFormEntry("rp", "50");
-				req.addFormEntry("filter", "");
-				req.addFormEntry("request", String.valueOf(i));
+				req.setFormEntry("project_id", "51028");
+				req.setFormEntry("report_mode", "words");
+				req.setFormEntry("language_id", String.valueOf(projectLanguageId));
+				req.setFormEntry("date_from", "2014-07-07");
+				req.setFormEntry("date_to", "2030-01-01");
+				req.setFormEntry("page", "1");
+				req.setFormEntry("sortname", "translated");
+				req.setFormEntry("sortorder", "desc");
+				req.setFormEntry("rp", "50");
+				req.setFormEntry("filter", "");
+				req.setFormEntry("request", String.valueOf(i));
 				i++;
 				requests.add(req);
 			}
@@ -208,7 +217,7 @@ public class OBSCrowdinHelper {
 				CrowdinRequest req2 = new CrowdinRequest();
 				req2.setUrl("crowdin.com/backend/project_actions/export_project");
 				req2.setMethod(CrowdinRequestMethod.GET);
-				req2.addParam("project_id", "51028");
+				req2.setParam("project_id", "51028");
 				req2.send();
 
 				run = true;
@@ -216,7 +225,7 @@ public class OBSCrowdinHelper {
 					CrowdinRequest req = new CrowdinRequest();
 					req.setUrl("crowdin.com/backend/project_actions/check_export_status");
 					req.setMethod(CrowdinRequestMethod.GET);
-					req.addParam("project_id", "51028");
+					req.setParam("project_id", "51028");
 					JSONObject statusObj = (JSONObject) new JSONParser().parse(req.send().getContent());
 					if (Integer.valueOf(statusObj.get("progress").toString()) == 100) {
 						run = false;
@@ -295,7 +304,7 @@ public class OBSCrowdinHelper {
 		CrowdinRequest req = new CrowdinRequest();
 		req.setUrl("crowdin.com/backend/project_actions/check_export_status");
 		req.setMethod(CrowdinRequestMethod.POST);
-		req.addParam("project_id", "51028");
+		req.setParam("project_id", "51028");
 		try {
 			return (boolean) ((JSONObject) new JSONParser().parse(req.send().getContent())).get("success");
 		} catch (ParseException e) {
@@ -307,7 +316,7 @@ public class OBSCrowdinHelper {
 		CrowdinRequest req = new CrowdinRequest();
 		req.setUrl("crowdin.com/backend/tasks/get_tasks_progress");
 		req.setMethod(CrowdinRequestMethod.GET);
-		req.addParam("project_id", "51028");
+		req.setParam("project_id", "51028");
 		try {
 			return (boolean) ((JSONObject) new JSONParser().parse(req.send().getContent())).get("success");
 		} catch (ParseException e) {

@@ -13,7 +13,11 @@ public class CrowdinCookieJar implements CookieJar {
 	private List<Cookie> cookies = new ArrayList<>();
 
 	private CrowdinCookieJar() {
-		cookies.add(new Cookie.Builder().name("csrf_token").value(getRandomString(10)).domain("crowdin.com").path("/").build());
+		StringBuilder sb = new StringBuilder();
+		String chars = "0123456789abcdefghijklmnopqrstuvwxyz";
+		for (int i = 0; i < 10; i++)
+			sb.append(chars.charAt(new Random().nextInt(chars.length())));
+		cookies.add(new Cookie.Builder().name("csrf_token").value(sb.toString()).domain("crowdin.com").path("/").build());
 	}
 
 	public static CrowdinCookieJar getInstance() {
@@ -33,13 +37,6 @@ public class CrowdinCookieJar implements CookieJar {
 			this.cookies.add(cookie);
 	}
 
-	String getCookieValue(String name) {
-		for (Cookie cookie : cookies)
-			if (cookie.name().equals(name))
-				return cookie.value();
-		return null;
-	}
-
 	void clearCookiesFromLogin() {
 		List<Cookie> cookiesLeft = new ArrayList<>();
 		for (Cookie cookie : cookies)
@@ -48,27 +45,11 @@ public class CrowdinCookieJar implements CookieJar {
 		cookies = cookiesLeft;
 	}
 
-	private String getRandomString(int length) {
-		String random = "";
-		String chars = "0123456789abcdefghijklmnopqrstuvwxyz";
-		for (int i = 0; i < length; i++)
-			random += chars.charAt(new Random().nextInt(chars.length()));
-		return random;
-	}
-
-	public String getCookiesRaw() {
-		StringBuilder sb = new StringBuilder();
-		for (Cookie cookie : cookies)
-			sb.append(cookie.name() + ";" + cookie.value() + ";" + cookie.domain() + "\n");
-		return sb.toString();
-	}
-
-	public void setCookies(String rawCookies) {
-		List<Cookie> cookies = new ArrayList<>();
-		for (String cookieRaw : rawCookies.split("\n")) {
-			String[] cookie = cookieRaw.split(";");
-			cookies.add(new Cookie.Builder().name(cookie[0]).value(cookie[1]).domain(cookie[2]).path("/").build());
-		}
+	public void setCookies(List<Cookie> cookies) {
 		this.cookies = cookies;
+	}
+
+	public List<Cookie> getCookies() {
+		return cookies;
 	}
 }
