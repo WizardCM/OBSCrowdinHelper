@@ -10,6 +10,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -34,20 +35,30 @@ import de.vainock.obscrowdinhelper.crowdin.CrowdinResponse;
 import okhttp3.Cookie;
 
 public class OBSCrowdinHelper {
-	private static Scanner scanner = new Scanner(System.in);
 
 	public static void main(String[] args) {
+		Scanner scanner = new Scanner(System.in);
 		try {
+			File root = new File(new File("").getAbsolutePath());
+			if (args.length == 0) {
+				File batchFile = new File(System.getenv("TEMP") + File.separator + "OBSCrowdinHelper.bat");
+				String jarPath = ClassLoader.getSystemClassLoader()
+						.getResource(OBSCrowdinHelper.class.getResource(OBSCrowdinHelper.class.getSimpleName() + ".class").getFile()).getFile();
+				Files.write(batchFile.toPath(),
+						("@echo off\ntitle OBSCrowdinHelper\ncls\njava -jar \"" + URLDecoder.decode(jarPath.substring(6, jarPath.lastIndexOf('!')), "UTF8") + "\" prompt\nexit")
+								.getBytes());
+				Runtime.getRuntime().exec("cmd /c start " + batchFile);
+				System.exit(0);
+			}
+
 			// login
-			println("OBSCrowdinHelper started!");
+			out("OBSCrowdinHelper started!");
 			CrowdinCookieJar cj = CrowdinCookieJar.getInstance();
 			boolean run = true;
 			int read;
-			String rootPath = new File("").getAbsolutePath() + File.separator;
-			new File(rootPath).mkdirs();
-			File loginFile = new File(rootPath + "Login");
+			File loginFile = new File(root, "Login");
 			if (loginFile.exists()) {
-				println("Try to use saved login information...");
+				out("Try to use saved login information...");
 				FileReader loginInformationFr = null;
 				loginInformationFr = new FileReader(loginFile);
 				StringBuilder loginInformationSb = new StringBuilder();
@@ -61,7 +72,7 @@ public class OBSCrowdinHelper {
 				cj.setCookies(cookies);
 				loginInformationFr.close();
 				if (checkIfValidUser()) {
-					println("The saved login information is valid, do you want to continue with this account to skip the login? Valid inputs: Yes/No");
+					out("The saved login information is valid, do you want to continue with this account to skip the login? Valid inputs: Yes/No");
 					boolean loginSkipRun = true;
 					while (loginSkipRun) {
 						String input = scanner.nextLine();
@@ -72,31 +83,31 @@ public class OBSCrowdinHelper {
 							loginSkipRun = false;
 							loginFile.delete();
 						} else
-							println("Please use a valid input: Yes/No");
+							out("Please use a valid input: Yes/No");
 					}
 				} else {
-					println("The saved login information is invalid, please login!");
+					out("The saved login information is invalid, please login!");
 					loginFile.delete();
 				}
 			} else
-				println("A login is required to continue!");
+				out("A login is required to continue!");
 
 			while (run) {
-				println("----------");
-				println("Email:");
+				out("----------");
+				out("Email:");
 				String loginEmail = scanner.nextLine();
-				println("Password:");
+				out("Password:");
 				String loginPassword = scanner.nextLine();
-				println("Two Factor Authentication code: (Leave it out when you have no 2FA enabled.)");
+				out("Two Factor Authentication code: (Leave it out when you have no 2FA enabled.)");
 				String loginMfa = scanner.nextLine();
-				println("----------");
-				println("Logging in...");
+				out("----------");
+				out("Logging in...");
 				CrowdinLogin.login(loginEmail, loginPassword, loginMfa);
 				if (CrowdinLogin.loginSuccessful()) {
 					run = false;
-					println("Login successful!");
+					out("Login successful!");
 				} else
-					println("The login was not successful, check your entered login information and try again!");
+					out("The login was not successful, check your entered login information and try again!");
 			}
 			FileOutputStream loginFos = new FileOutputStream(loginFile);
 			StringBuilder cookiesSB = new StringBuilder();
@@ -106,18 +117,17 @@ public class OBSCrowdinHelper {
 			loginFos.flush();
 			loginFos.close();
 
-			println("----------");
-			println("To start collecting all the information, press Enter.");
+			out("----------");
+			out("To start collecting all the information, press Enter.");
 			scanner.nextLine();
-			println("Start fetching all datas:");
-			println(" - clear OBSCrowdinHelper directory");
+			out("Start fetching all datas:");
+			out(" - clear OBSCrowdinHelper directory");
 
-			for (File file : new File(rootPath).listFiles())
+			for (File file : root.listFiles())
 				if (file.getName().equals("Translators.txt") || file.getName().equals("Translations") || file.getName().equals("Translations.zip"))
 					deleteFile(file);
 
-			println(" - request project members");
-
+			out(" - request project members");
 			// get project language names and ids
 			CrowdinRequest req1 = new CrowdinRequest();
 			req1.setUrl("crowdin.com/backend/translate/get_editor_data");
@@ -187,7 +197,7 @@ public class OBSCrowdinHelper {
 					output.put(projectLanguages.get(projectLanguageId), languageUsers);
 			}
 
-			println(" - generate Translators.txt");
+			out(" - generate Translators.txt");
 
 			// save project members
 			List<String> translatedLangs = new ArrayList<>();
@@ -205,15 +215,15 @@ public class OBSCrowdinHelper {
 					resultSb.append("  - " + userPerLang + "\n");
 			}
 			resultSb.deleteCharAt(resultSb.length() - 1);
-			Writer out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(rootPath + "Translators.txt")), StandardCharsets.UTF_8));
+			Writer out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(root, "Translators.txt")), StandardCharsets.UTF_8));
 			out.append(resultSb.toString());
 			out.flush();
 			out.close();
 			// build project
 			System.out.print(" - check account permissions: ");
 			if (checkIfManager()) {
-				println("Account has enough permissions.");
-				println(" - build project");
+				out("Account has enough permissions.");
+				out(" - build project");
 				CrowdinRequest req2 = new CrowdinRequest();
 				req2.setUrl("crowdin.com/backend/project_actions/export_project");
 				req2.setMethod(CrowdinRequestMethod.GET);
@@ -233,19 +243,18 @@ public class OBSCrowdinHelper {
 						Thread.sleep(1000);
 				}
 			} else
-				println("Account has not enough permissions, skip project build.");
+				out("Account has not enough permissions, skip project build.");
 			// download build
-			println(" - download newest build");
-			File buildFile = new File(rootPath + "Translations.zip");
+			out(" - download newest build");
+			File buildFile = new File(root, "Translations.zip");
 			Files.copy(new URL("https://crowdin.com/backend/download/project/obs-studio.zip").openStream(), buildFile.toPath());
 			// unzip build
-			println(" - unzip build and delete empty files");
+			out(" - unzip build and delete empty files");
 			ZipInputStream zipIn = new ZipInputStream(new FileInputStream(buildFile));
 			ZipEntry entry = zipIn.getNextEntry();
 			byte[] buffer = new byte[2048];
 			while (entry != null) {
-				String filePath = rootPath + "Translations" + File.separator + entry.getName();
-				File file = new File(filePath);
+				File file = new File(root, "Translations" + File.separator + entry.getName());
 				if (entry.isDirectory())
 					file.mkdirs();
 				if (!entry.isDirectory()) {
@@ -254,7 +263,7 @@ public class OBSCrowdinHelper {
 						entryFos.write(buffer, 0, read);
 					entryFos.flush();
 					entryFos.close();
-					FileReader emptyFilesFr = new FileReader(filePath);
+					FileReader emptyFilesFr = new FileReader(file);
 					StringBuilder emptyFilesSb = new StringBuilder();
 					while ((read = emptyFilesFr.read()) != -1)
 						emptyFilesSb.append(Character.valueOf((char) read));
@@ -268,25 +277,26 @@ public class OBSCrowdinHelper {
 			zipIn.close();
 			buildFile.delete();
 
-			println("Finished!");
-			println("----------");
-			println("Press Enter to close the program.");
+			out("Finished!");
+			out("----------");
+			out("Press Enter to close the program.");
 			scanner.nextLine();
 		} catch (Exception e) {
-			println("----- An error occured: -----");
-			println("Please close the program and try again. If this doesn't help, contact the developer: contact.vainock@gmail.com");
-			println("Please also provide the following error message which will help to identify and fix the bug:");
+			out("----- An error occured: -----");
+			out("Please close the program and try again. If this doesn't help, contact the developer: contact.vainock@gmail.com");
+			out("Please also provide the following error message which will help to identify and fix the bug:");
 			StringWriter sw = new StringWriter();
 			PrintWriter pw = new PrintWriter(sw);
 			e.printStackTrace(pw);
-			println(sw.toString());
+			out(sw.toString());
 			scanner.nextLine();
 			System.exit(0);
+			scanner.close();
 		}
 
 	}
 
-	private static void println(String text) {
+	private static void out(String text) {
 		System.out.println(text);
 	}
 
