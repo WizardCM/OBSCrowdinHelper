@@ -71,7 +71,7 @@ public class OBSCrowdinHelper {
 				}
 				cj.setCookies(cookies);
 				loginInformationFr.close();
-				if (checkIfValidUser()) {
+				if (CrowdinLogin.loginSuccessful()) {
 					out("The saved login information is valid, do you want to continue with this account to skip the login? Valid inputs: Yes/No");
 					boolean loginSkipRun = true;
 					while (loginSkipRun) {
@@ -314,18 +314,6 @@ public class OBSCrowdinHelper {
 		CrowdinRequest req = new CrowdinRequest();
 		req.setUrl("crowdin.com/backend/project_actions/check_export_status");
 		req.setMethod(CrowdinRequestMethod.POST);
-		req.setParam("project_id", "51028");
-		try {
-			return (boolean) ((JSONObject) new JSONParser().parse(req.send().getContent())).get("success");
-		} catch (ParseException e) {
-			return false;
-		}
-	}
-
-	private static boolean checkIfValidUser() {
-		CrowdinRequest req = new CrowdinRequest();
-		req.setUrl("crowdin.com/backend/tasks/get_tasks_progress");
-		req.setMethod(CrowdinRequestMethod.GET);
 		req.setParam("project_id", "51028");
 		try {
 			return (boolean) ((JSONObject) new JSONParser().parse(req.send().getContent())).get("success");
