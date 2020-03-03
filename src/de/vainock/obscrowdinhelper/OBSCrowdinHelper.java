@@ -72,7 +72,7 @@ public class OBSCrowdinHelper {
 				cj.setCookies(cookies);
 				loginInformationFr.close();
 				if (CrowdinLogin.loginSuccessful()) {
-					out("The saved login information is valid, do you want to continue with this account to skip the login? Valid inputs: Yes/No");
+					out("The saved login information is valid, do you want to continue with this account to skip the login process? Valid inputs: Yes/No");
 					boolean loginSkipRun = true;
 					while (loginSkipRun) {
 						String input = scanner.nextLine();
@@ -83,7 +83,7 @@ public class OBSCrowdinHelper {
 							loginSkipRun = false;
 							loginFile.delete();
 						} else
-							out("Please use a valid input: Yes/No");
+							out("Please enter a valid input: Yes/No");
 					}
 				} else {
 					out("The saved login information is invalid, please login!");
@@ -118,16 +118,13 @@ public class OBSCrowdinHelper {
 			loginFos.close();
 
 			out("----------");
-			out("To start collecting all the information, press Enter.");
+			out("Press Enter to start collecting the data.");
 			scanner.nextLine();
-			out("Start fetching all datas:");
-			out(" - clear OBSCrowdinHelper directory");
-
+			out(" - removing Translators.txt, Translations.zip and Translations files");
 			for (File file : root.listFiles())
 				if (file.getName().equals("Translators.txt") || file.getName().equals("Translations") || file.getName().equals("Translations.zip"))
 					deleteFile(file);
-
-			out(" - request project members");
+			out(" - requesting project members");
 			// get project language names and ids
 			CrowdinRequest req1 = new CrowdinRequest();
 			req1.setUrl("crowdin.com/backend/translate/get_editor_data");
@@ -171,7 +168,7 @@ public class OBSCrowdinHelper {
 			// read and format project member's name
 			Map<String, List<String>> output = new HashMap<>();
 			for (CrowdinResponse res : CrowdinRequest.send(requests)) {
-				ArrayList<String> languageUsers = new ArrayList<>();
+				List<String> languageUsers = new ArrayList<>();
 				Short projectLanguageId = null;
 				for (Object user : (JSONArray) ((JSONObject) new JSONParser().parse(res.getContent())).get("rows")) {
 					JSONObject rowObj = (JSONObject) user;
@@ -197,7 +194,7 @@ public class OBSCrowdinHelper {
 					output.put(projectLanguages.get(projectLanguageId), languageUsers);
 			}
 
-			out(" - generate Translators.txt");
+			out(" - generating Translators.txt");
 
 			// save project members
 			List<String> translatedLangs = new ArrayList<>();
@@ -220,10 +217,10 @@ public class OBSCrowdinHelper {
 			out.flush();
 			out.close();
 			// build project
-			System.out.print(" - check account permissions: ");
+			System.out.print(" - checking account permissions: ");
 			if (checkIfManager()) {
 				out("Account has enough permissions.");
-				out(" - build project");
+				out(" - building OBS Studio project");
 				CrowdinRequest req2 = new CrowdinRequest();
 				req2.setUrl("crowdin.com/backend/project_actions/export_project");
 				req2.setMethod(CrowdinRequestMethod.GET);
@@ -243,13 +240,13 @@ public class OBSCrowdinHelper {
 						Thread.sleep(1000);
 				}
 			} else
-				out("Account has not enough permissions, skip project build.");
+				out("Account has not enough permissions, skip project build");
 			// download build
-			out(" - download newest build");
+			out(" - downloading newest build");
 			File buildFile = new File(root, "Translations.zip");
 			Files.copy(new URL("https://crowdin.com/backend/download/project/obs-studio.zip").openStream(), buildFile.toPath());
 			// unzip build
-			out(" - unzip build and delete empty files");
+			out(" - unzipping build and deleting empty files");
 			ZipInputStream zipIn = new ZipInputStream(new FileInputStream(buildFile));
 			ZipEntry entry = zipIn.getNextEntry();
 			byte[] buffer = new byte[2048];
@@ -280,7 +277,6 @@ public class OBSCrowdinHelper {
 			out("Finished!");
 			out("----------");
 			out("Press Enter to close the program.");
-			scanner.nextLine();
 		} catch (Exception e) {
 			out("----- An error occured: -----");
 			out("Please close the program and try again. If this doesn't help, contact the developer: contact.vainock@gmail.com");
@@ -289,11 +285,10 @@ public class OBSCrowdinHelper {
 			PrintWriter pw = new PrintWriter(sw);
 			e.printStackTrace(pw);
 			out(sw.toString());
-			scanner.nextLine();
-			System.exit(0);
-			scanner.close();
 		}
-
+		scanner.nextLine();
+		System.exit(0);
+		scanner.close();
 	}
 
 	private static void out(String text) {
