@@ -25,8 +25,6 @@ import java.util.zip.ZipInputStream;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
-
 import de.vainock.obscrowdinhelper.crowdin.CrowdinCookieJar;
 import de.vainock.obscrowdinhelper.crowdin.CrowdinLogin;
 import de.vainock.obscrowdinhelper.crowdin.CrowdinRequest;
@@ -218,7 +216,7 @@ public class OBSCrowdinHelper {
 			out.close();
 			// build project
 			System.out.print(" - checking account permissions: ");
-			if (checkIfManager()) {
+			if (isUserManager()) {
 				out("Account has enough permissions.");
 				out(" - building OBS Studio project");
 				CrowdinRequest req2 = new CrowdinRequest();
@@ -296,23 +294,25 @@ public class OBSCrowdinHelper {
 	}
 
 	private static void deleteFile(File file) {
-		if (file.isFile() && file.exists()) {
-			file.delete();
+		if (file.isFile()) {
+			if (file.exists())
+				file.delete();
 		} else {
 			for (File subFile : file.listFiles())
 				deleteFile(subFile);
-			file.delete();
+			if (file.exists())
+				file.delete();
 		}
 	}
 
-	private static boolean checkIfManager() {
+	private static boolean isUserManager() {
 		CrowdinRequest req = new CrowdinRequest();
 		req.setUrl("crowdin.com/backend/project_actions/check_export_status");
 		req.setMethod(CrowdinRequestMethod.POST);
 		req.setParam("project_id", "51028");
 		try {
 			return (boolean) ((JSONObject) new JSONParser().parse(req.send().getContent())).get("success");
-		} catch (ParseException e) {
+		} catch (Exception e) {
 			return false;
 		}
 	}
