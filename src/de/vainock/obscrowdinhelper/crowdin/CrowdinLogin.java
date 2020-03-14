@@ -19,11 +19,10 @@ public class CrowdinLogin {
 	 * @param login    - A {@link String} representing the email or username of the account.
 	 * @param password - A {@link String} representing the password of the account.
 	 * @param tfaCode  - A {@link String} representing the Two-Factor Authentication code. If TFA is disabled, pass either an empty {@link String} or <code>null</code>.
-	 * @throws IllegalArgumentException if the login or password is either empty or <code>null</code>.
 	 */
 	public static void login(String login, String password, String tfaCode) {
 		if (login.isEmpty() || login == null || password.isEmpty() || password == null)
-			throw new IllegalArgumentException("The login and password can neither be empty nor null.");
+			return;
 		CrowdinRequest req = new CrowdinRequest();
 		req.setUrl("accounts.crowdin.com/login");
 		req.setMethod(CrowdinRequestMethod.POST);
