@@ -77,6 +77,12 @@ public class CrowdinResponse {
 		responses.add(response);
 	}
 
+	/**
+	 * Returns the {@link CrowdinRequest} of the {@link CrowdinResponse}.
+	 * 
+	 * @author Vainock
+	 * @return the {@link CrowdinRequest}.
+	 */
 	public CrowdinRequest getCrowdinRequest() {
 		return request;
 	}
