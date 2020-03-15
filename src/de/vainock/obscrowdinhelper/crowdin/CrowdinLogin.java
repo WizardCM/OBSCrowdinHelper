@@ -3,7 +3,6 @@ package de.vainock.obscrowdinhelper.crowdin;
 /**
  * A class that takes over the login process to <a href="https://crowdin.com/">Crowdin</a> which is required for mostly all of the {@link CrowdinRequest}s.
  * 
- * @since 1.0
  * @author Vainock
  */
 public class CrowdinLogin {
@@ -12,9 +11,8 @@ public class CrowdinLogin {
 	}
 
 	/**
-	 * Logins to an account using <b>accounts.crowdin.com/login</b> to contain specific cookies needed for mostly all of the {@link CrowdinRequest}s.
+	 * Logins to an account to contain specific cookies needed for mostly all of the {@link CrowdinRequest}s.
 	 * 
-	 * @since 1.0
 	 * @author Vainock
 	 * @param login    - A {@link String} representing the email or username of the account.
 	 * @param password - A {@link String} representing the password of the account.
@@ -37,7 +35,6 @@ public class CrowdinLogin {
 	/**
 	 * Returns if the login using {@link #login(String, String, String)} was successful.
 	 * 
-	 * @since 1.0
 	 * @author Vainock
 	 * @return a <code>boolean</code> if the login was successful.
 	 */

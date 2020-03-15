@@ -145,6 +145,7 @@ public class OBSCrowdinHelper {
 			// get project members
 			int i = 1;
 			List<CrowdinRequest> requests = new ArrayList<>();
+			CrowdinRequest.setMaxRunningRequests(50);
 			for (short projectLanguageId : projectLanguages.keySet()) {
 				CrowdinRequest req = new CrowdinRequest();
 				req.setMethod(CrowdinRequestMethod.POST);
