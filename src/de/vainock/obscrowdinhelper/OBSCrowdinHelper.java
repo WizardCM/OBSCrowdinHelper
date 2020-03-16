@@ -165,7 +165,7 @@ public class OBSCrowdinHelper {
 				requests.add(req);
 			}
 
-			// read and format project member's name
+			// read and format project member names
 			Map<String, List<String>> output = new HashMap<>();
 			for (CrowdinResponse res : CrowdinRequest.send(requests)) {
 				List<String> languageUsers = new ArrayList<>();
@@ -176,19 +176,21 @@ public class OBSCrowdinHelper {
 					JSONArray languagesArray = (JSONArray) rowObj.get("languages");
 					String userName = (String) userObj.get("name");
 					String userLogin = (String) userObj.get("login");
-					if (!languagesArray.isEmpty()) {
-						if (projectLanguageId == null)
-							projectLanguageId = Short.valueOf(languagesArray.get(0).toString());
-						String userFullName;
-						if (userName != null) {
-							if (userName.isEmpty()) {
-								userFullName = userLogin;
-							} else
-								userFullName = userName + " (" + userLogin + ")";
-						} else
+					if (userLogin.equals("REMOVED_USER"))
+						continue;
+					if (languagesArray.isEmpty())
+						continue;
+					if (projectLanguageId == null)
+						projectLanguageId = Short.valueOf(languagesArray.get(0).toString());
+					String userFullName;
+					if (userName != null)
+						if (userName.isEmpty())
 							userFullName = userLogin;
-						languageUsers.add(userFullName);
-					}
+						else
+							userFullName = userName + " (" + userLogin + ")";
+					else
+						userFullName = userLogin;
+					languageUsers.add(userFullName);
 				}
 				if (projectLanguageId != null)
 					output.put(projectLanguages.get(projectLanguageId), languageUsers);
