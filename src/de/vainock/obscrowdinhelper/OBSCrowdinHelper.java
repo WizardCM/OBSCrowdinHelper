@@ -40,13 +40,11 @@ public class OBSCrowdinHelper {
 		try {
 			File root = new File(new File("").getAbsolutePath());
 			if (args.length == 0) {
-				File batchFile = new File(System.getenv("TEMP") + File.separator + "OBSCrowdinHelper.bat");
 				String jarPath = ClassLoader.getSystemClassLoader()
 						.getResource(OBSCrowdinHelper.class.getResource(OBSCrowdinHelper.class.getSimpleName() + ".class").getFile()).getFile();
-				Files.write(batchFile.toPath(),
+				Runtime.getRuntime().exec("cmd /c start " + Files.write(File.createTempFile("OBSCrowdinHelper", ".bat").toPath(),
 						("@echo off\ntitle OBSCrowdinHelper\ncls\njava -jar \"" + URLDecoder.decode(jarPath.substring(6, jarPath.lastIndexOf('!')), "UTF8") + "\" prompt\nexit")
-								.getBytes());
-				Runtime.getRuntime().exec("cmd /c start " + batchFile);
+								.getBytes()));
 				System.exit(0);
 			}
 
