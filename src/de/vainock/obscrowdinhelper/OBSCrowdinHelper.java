@@ -49,13 +49,11 @@ public class OBSCrowdinHelper {
 			}
 
 			// login
-			out("OBSCrowdinHelper started!");
 			CrowdinCookieJar cj = CrowdinCookieJar.getInstance();
 			boolean run = true;
 			int read;
 			File loginFile = new File(root, "Login");
 			if (loginFile.exists()) {
-				out("Try to use saved login information...");
 				FileReader loginInformationFr = null;
 				loginInformationFr = new FileReader(loginFile);
 				StringBuilder loginInformationSb = new StringBuilder();
@@ -68,22 +66,9 @@ public class OBSCrowdinHelper {
 				}
 				cj.setCookies(cookies);
 				loginInformationFr.close();
-				if (CrowdinLogin.loginSuccessful()) {
-					out("The saved login information is valid, do you want to continue with this account to skip the login process? Valid inputs: Yes/No");
-					boolean loginSkipRun = true;
-					while (loginSkipRun) {
-						String input = scanner.nextLine();
-						if (input.equalsIgnoreCase("yes")) {
-							loginSkipRun = false;
-							run = false;
-						} else if (input.equalsIgnoreCase("no")) {
-							loginSkipRun = false;
-							loginFile.delete();
-						} else
-							out("Please enter a valid input: Yes/No");
-					}
-				} else {
-					out("The saved login information is invalid, please login!");
+				if (CrowdinLogin.loginSuccessful())
+					run = false;
+				else {
 					loginFile.delete();
 					cj.setCookies(new ArrayList<Cookie>());
 				}
@@ -101,11 +86,15 @@ public class OBSCrowdinHelper {
 				out("----------");
 				out("Logging in...");
 				CrowdinLogin.login(loginEmail, loginPassword, loginMfa);
-				if (CrowdinLogin.loginSuccessful()) {
-					run = false;
-					out("Login successful!");
-				} else
-					out("The login was not successful, check your entered login information and try again!");
+				if (CrowdinLogin.loginSuccessful())
+					break;
+				else {
+					cls();
+					out("The login was not successful, check your entered login information and try again:");
+					out("Email: " + loginEmail);
+					out("Password: " + loginPassword);
+					out("Two Factor Authentication code: " + loginMfa);
+				}
 			}
 			FileOutputStream loginFos = new FileOutputStream(loginFile);
 			StringBuilder cookiesSB = new StringBuilder();
@@ -115,7 +104,7 @@ public class OBSCrowdinHelper {
 			loginFos.flush();
 			loginFos.close();
 
-			out("----------");
+			cls();
 			out("Press Enter to start collecting the data.");
 			scanner.nextLine();
 			out(" - removing Translators.txt, Translations.zip and Translations files");
@@ -275,17 +264,11 @@ public class OBSCrowdinHelper {
 			zipIn.close();
 			buildFile.delete();
 
-			out("Finished!");
 			out("----------");
+			out("Finished!");
 			out("Press Enter to close the program.");
 		} catch (Exception e) {
-			out("----- An error occured: -----");
-			out("Please close the program and try again. If this doesn't help, contact the developer: contact.vainock@gmail.com");
-			out("Please also provide the following error message which will help to identify and fix the bug:");
-			StringWriter sw = new StringWriter();
-			PrintWriter pw = new PrintWriter(sw);
-			e.printStackTrace(pw);
-			out(sw.toString());
+			error(e);
 		}
 		scanner.nextLine();
 		System.exit(0);
@@ -318,5 +301,24 @@ public class OBSCrowdinHelper {
 		} catch (Exception e) {
 			return false;
 		}
+	}
+
+	private static void cls() {
+		try {
+			new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
+		} catch (Exception e) {
+			error(e);
+		}
+	}
+
+	private static void error(Exception e) {
+		cls();
+		out("----- An error occured: -----");
+		out("Please close the program and try again. If this doesn't help, contact the developer: contact.vainock@gmail.com");
+		out("Please also provide the following error message which will help to identify and fix the bug:");
+		StringWriter sw = new StringWriter();
+		PrintWriter pw = new PrintWriter(sw);
+		e.printStackTrace(pw);
+		out(sw.toString());
 	}
 }
