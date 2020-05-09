@@ -230,7 +230,7 @@ public class OBSCrowdinHelper {
 						Thread.sleep(1000);
 				}
 			} else
-				out("Account has not enough permissions, skip project build");
+				out("Account has not enough permissions, skipping project build");
 			// download build
 			out(" - downloading newest build");
 			File buildFile = new File(root, "Translations.zip");
