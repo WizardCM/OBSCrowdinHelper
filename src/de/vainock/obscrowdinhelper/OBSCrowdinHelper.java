@@ -154,9 +154,9 @@ public class OBSCrowdinHelper {
 				req.setFormEntry("date_from", "2014-07-07");
 				req.setFormEntry("date_to", "2030-01-01");
 				req.setFormEntry("page", "1");
-				req.setFormEntry("sortname", "translated");
+				req.setFormEntry("sortname", "winning");
 				req.setFormEntry("sortorder", "desc");
-				req.setFormEntry("rp", "50");
+				req.setFormEntry("rp", "60");
 				req.setFormEntry("filter", "");
 				req.setFormEntry("request", String.valueOf(i));
 				i++;
