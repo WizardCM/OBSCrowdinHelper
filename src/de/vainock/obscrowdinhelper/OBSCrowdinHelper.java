@@ -61,7 +61,7 @@ public class OBSCrowdinHelper {
 				StringBuilder loginInformationSb = new StringBuilder();
 				while ((read = loginInformationFr.read()) != -1)
 					loginInformationSb.append(Character.valueOf((char) read));
-				List<Cookie> cookies = new ArrayList<>();
+				List<Cookie> cookies = new ArrayList<Cookie>();
 				for (String cookieRaw : loginInformationSb.toString().split("\n")) {
 					String[] cookie = cookieRaw.split(";");
 					cookies.add(new Cookie.Builder().name(cookie[0]).value(cookie[1]).domain(cookie[2]).path("/").build());
@@ -133,7 +133,7 @@ public class OBSCrowdinHelper {
 			req1.setParam("original_url", "https://crowdin.com/translate/obs-studio/all/en-de");
 			CrowdinResponse res1 = req1.send();
 
-			Map<Short, String> projectLanguages = new HashMap<>();
+			Map<Short, String> projectLanguages = new HashMap<Short, String>();
 			for (Object language : (JSONArray) ((JSONObject) ((JSONObject) ((JSONObject) ((JSONObject) new JSONParser().parse(res1.getContent())).get("data"))
 					.get("init_editor")).get("project")).get("target_languages")) {
 				JSONObject languageObj = (JSONObject) language;
@@ -142,7 +142,7 @@ public class OBSCrowdinHelper {
 
 			// get project members
 			int i = 1;
-			List<CrowdinRequest> requests = new ArrayList<>();
+			List<CrowdinRequest> requests = new ArrayList<CrowdinRequest>();
 			CrowdinRequest.setMaxRunningRequests(50);
 			for (short projectLanguageId : projectLanguages.keySet()) {
 				CrowdinRequest req = new CrowdinRequest();
@@ -164,9 +164,9 @@ public class OBSCrowdinHelper {
 			}
 
 			// read and format project member names
-			Map<String, List<String>> output = new HashMap<>();
+			Map<String, List<String>> output = new HashMap<String, List<String>>();
 			for (CrowdinResponse res : CrowdinRequest.send(requests)) {
-				List<String> languageUsers = new ArrayList<>();
+				List<String> languageUsers = new ArrayList<String>();
 				Short projectLanguageId = null;
 				for (Object user : (JSONArray) ((JSONObject) new JSONParser().parse(res.getContent())).get("rows")) {
 					JSONObject rowObj = (JSONObject) user;
@@ -197,7 +197,7 @@ public class OBSCrowdinHelper {
 			out(" - generating Translators.txt");
 
 			// save project members
-			List<String> translatedLangs = new ArrayList<>();
+			List<String> translatedLangs = new ArrayList<String>();
 
 			for (String keySetObj : output.keySet())
 				translatedLangs.add(keySetObj);
@@ -313,7 +313,7 @@ public class OBSCrowdinHelper {
 		req.setMethod(CrowdinRequestMethod.POST);
 		req.setParam("project_id", "51028");
 		try {
-			return (boolean) ((JSONObject) new JSONParser().parse(req.send().getContent())).get("success");
+			return (Boolean) ((JSONObject) new JSONParser().parse(req.send().getContent())).get("success");
 		} catch (Exception e) {
 			return false;
 		}

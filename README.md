@@ -2,7 +2,7 @@
 OBSCrowdinHelper is a simple Java tool to fetch the newest translations and translators from the [OBS Studio Crowdin project](https://crowdin.com/project/obs-studio).
 
 ### Requirements
-- Java SE 1.7 or higher
+- Java SE 1.6 or higher
 - Windows (should also work on macOS but this wasn't tested)
 - A Crowdin Account
 <details><summary>Why does the program need my account credentials?</summary>

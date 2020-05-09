@@ -25,7 +25,7 @@ public class CrowdinEventManager {
 	 */
 	public void registerEvent(CrowdinRequestFinishedEvent event) {
 		if (events == null)
-			events = new ArrayList<>();
+			events = new ArrayList<CrowdinRequestFinishedEvent>();
 		events.add(event);
 	}
 

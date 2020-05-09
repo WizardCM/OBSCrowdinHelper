@@ -10,7 +10,7 @@ import okhttp3.HttpUrl;
 
 public class CrowdinCookieJar implements CookieJar {
 	private static CrowdinCookieJar myCookieJar = new CrowdinCookieJar();
-	private List<Cookie> cookies = new ArrayList<>();
+	private List<Cookie> cookies = new ArrayList<Cookie>();
 
 	private CrowdinCookieJar() {
 		StringBuilder sb = new StringBuilder();
@@ -27,7 +27,7 @@ public class CrowdinCookieJar implements CookieJar {
 	@Override
 	public List<Cookie> loadForRequest(HttpUrl url) {
 		if (cookies == null)
-			return new ArrayList<>();
+			return new ArrayList<Cookie>();
 		return cookies;
 	}
 
@@ -38,7 +38,7 @@ public class CrowdinCookieJar implements CookieJar {
 	}
 
 	void clearCookiesFromLogin() {
-		List<Cookie> cookiesLeft = new ArrayList<>();
+		List<Cookie> cookiesLeft = new ArrayList<Cookie>();
 		for (Cookie cookie : cookies)
 			if (cookie.name().equals("cid") || cookie.name().equals("token") || cookie.name().equals("csrf_token"))
 				cookiesLeft.add(cookie);

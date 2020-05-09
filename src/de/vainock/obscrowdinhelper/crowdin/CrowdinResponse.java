@@ -66,14 +66,14 @@ public class CrowdinResponse {
 	}
 
 	static List<CrowdinResponse> getResponses() {
-		List<CrowdinResponse> res = new ArrayList<>(responses);
+		List<CrowdinResponse> res = new ArrayList<CrowdinResponse>(responses);
 		responses.clear();
 		return res;
 	}
 
 	synchronized static void addResponse(CrowdinResponse response) {
 		if (responses == null)
-			responses = new ArrayList<>();
+			responses = new ArrayList<CrowdinResponse>();
 		responses.add(response);
 	}
 

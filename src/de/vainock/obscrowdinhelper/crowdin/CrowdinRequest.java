@@ -24,7 +24,7 @@ public class CrowdinRequest implements Runnable {
 	private static int maxRunningReqs = 25;
 	private static ExecutorService executor;
 	private static OkHttpClient httpClient;
-	private Map<String, String> headers = new HashMap<>(), parameters = new HashMap<>(), formEntries = new HashMap<>();
+	private Map<String, String> headers = new HashMap<String, String>(), parameters = new HashMap<String, String>(), formEntries = new HashMap<String, String>();
 	private String url;
 	private CrowdinRequestMethod method;
 	private boolean trigger;
@@ -260,7 +260,7 @@ public class CrowdinRequest implements Runnable {
 		if (requests == null)
 			throw new IllegalArgumentException("The list of requests can't be null.");
 		if (requests.size() == 0)
-			return new ArrayList<>();
+			return new ArrayList<CrowdinResponse>();
 		if (executor == null)
 			executor = Executors.newFixedThreadPool(maxRunningReqs);
 		for (CrowdinRequest request : requests)
