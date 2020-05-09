@@ -85,6 +85,7 @@ public class OBSCrowdinHelper {
 				} else {
 					out("The saved login information is invalid, please login!");
 					loginFile.delete();
+					cj.setCookies(new ArrayList<Cookie>());
 				}
 			} else
 				out("A login is required to continue!");
