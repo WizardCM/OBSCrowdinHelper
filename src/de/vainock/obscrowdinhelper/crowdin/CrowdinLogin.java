@@ -21,11 +21,11 @@ public class CrowdinLogin {
 	public static void login(String login, String password, String tfaCode) {
 		if (login.isEmpty() || login == null || password.isEmpty() || password == null)
 			return;
-		CrowdinRequest req = new CrowdinRequest();
-		req.setUrl("accounts.crowdin.com/login");
-		req.setMethod(CrowdinRequestMethod.POST);
-		req.setFormEntry("email_or_login", login);
-		req.setFormEntry("password", password);
+		CrowdinRequest req = new CrowdinRequest()
+			.setUrl("accounts.crowdin.com/login")
+			.setMethod(CrowdinRequestMethod.POST)
+			.setFormEntry("email_or_login", login)
+			.setFormEntry("password", password);
 		if (!(tfaCode.isEmpty() || tfaCode == null))
 			req.setFormEntry("one_time_password", tfaCode);
 		req.send();
@@ -39,9 +39,6 @@ public class CrowdinLogin {
 	 * @return a <code>boolean</code> if the login was successful.
 	 */
 	public static boolean loginSuccessful() {
-		CrowdinRequest req = new CrowdinRequest();
-		req.setUrl("crowdin.com/profile");
-		req.setMethod(CrowdinRequestMethod.GET);
-		return !req.send().isUrlDifferent();
+		return !new CrowdinRequest().setUrl("crowdin.com/profile").setMethod(CrowdinRequestMethod.GET).send().isUrlDifferent();
 	}
 }

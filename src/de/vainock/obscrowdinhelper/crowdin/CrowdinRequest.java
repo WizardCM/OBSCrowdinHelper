@@ -42,8 +42,9 @@ public class CrowdinRequest implements Runnable {
 		return headers.get(name);
 	}
 
-	void setHeader(String name, String value) {
+	CrowdinRequest setHeader(String name, String value) {
 		this.headers.put(name, value);
+		return this;
 	}
 
 	/**
@@ -308,12 +309,9 @@ public class CrowdinRequest implements Runnable {
 			if (httpClient == null)
 				httpClient = new OkHttpClient().newBuilder().followRedirects(true).cookieJar(CrowdinCookieJar.getInstance()).build();
 			Response response = httpClient.newCall(reqBuilder.build()).execute();
-			CrowdinResponse res = new CrowdinResponse();
-			res.setContent(response.body().string());
+			CrowdinResponse res = new CrowdinResponse().setContent(response.body().string()).setCrowdinRequest(this).setStatusCode(response.code());
 			if (response.request().url().toString().equals("https://" + url))
 				res.setUrlDifferent(false);
-			res.setCrowdinRequest(this);
-			res.setStatusCode(response.code());
 			if (trigger)
 				CrowdinEventManager.getInstance().callEvents(res);
 			else

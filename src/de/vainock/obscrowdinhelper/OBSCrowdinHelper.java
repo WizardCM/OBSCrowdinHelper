@@ -40,11 +40,15 @@ public class OBSCrowdinHelper {
 		try {
 			File root = new File(new File("").getAbsolutePath());
 			if (args.length == 0) {
-				String jarPath = ClassLoader.getSystemClassLoader()
-						.getResource(OBSCrowdinHelper.class.getResource(OBSCrowdinHelper.class.getSimpleName() + ".class").getFile()).getFile();
-				Runtime.getRuntime().exec("cmd /c start " + Files.write(File.createTempFile("OBSCrowdinHelper", ".bat").toPath(),
-						("@echo off\ntitle OBSCrowdinHelper\ncls\njava -jar \"" + URLDecoder.decode(jarPath.substring(6, jarPath.lastIndexOf('!')), "UTF8") + "\" prompt\nexit")
-								.getBytes()));
+				String jarPath = ClassLoader
+					.getSystemClassLoader()
+					.getResource(OBSCrowdinHelper.class.getResource(OBSCrowdinHelper.class.getSimpleName() + ".class").getFile())
+					.getFile();
+				Runtime
+					.getRuntime()
+					.exec("cmd /c start " + Files
+						.write(File.createTempFile("OBSCrowdinHelper", ".bat").toPath(), ("@echo off\ntitle OBSCrowdinHelper\ncls\njava -jar \""
+								+ URLDecoder.decode(jarPath.substring(6, jarPath.lastIndexOf('!')), "UTF8") + "\" prompt\nexit").getBytes()));
 				System.exit(0);
 			}
 
@@ -113,19 +117,18 @@ public class OBSCrowdinHelper {
 					deleteFile(file);
 			out(" - requesting project members");
 			// get project language names and ids
-			CrowdinRequest req1 = new CrowdinRequest();
-			req1.setUrl("crowdin.com/backend/translate/get_editor_data");
-			req1.setMethod(CrowdinRequestMethod.GET);
-			req1.setParam("editor_mode", "translate");
-			req1.setParam("project_identifier", "obs-studio");
-			req1.setParam("file_id", "all");
-			req1.setParam("languages", "en-de");
-			req1.setParam("original_url", "https://crowdin.com/translate/obs-studio/all/en-de");
-			CrowdinResponse res1 = req1.send();
-
 			Map<Short, String> projectLanguages = new HashMap<Short, String>();
-			for (Object language : (JSONArray) ((JSONObject) ((JSONObject) ((JSONObject) ((JSONObject) new JSONParser().parse(res1.getContent())).get("data"))
-					.get("init_editor")).get("project")).get("target_languages")) {
+			for (Object language : (JSONArray) ((JSONObject) ((JSONObject) ((JSONObject) ((JSONObject) new JSONParser()
+				.parse(new CrowdinRequest()
+					.setUrl("crowdin.com/backend/translate/get_editor_data")
+					.setMethod(CrowdinRequestMethod.GET)
+					.setParam("editor_mode", "translate")
+					.setParam("project_identifier", "obs-studio")
+					.setParam("file_id", "all")
+					.setParam("languages", "en-de")
+					.setParam("original_url", "https://crowdin.com/translate/obs-studio/all/en-de")
+					.send()
+					.getContent())).get("data")).get("init_editor")).get("project")).get("target_languages")) {
 				JSONObject languageObj = (JSONObject) language;
 				projectLanguages.put(Short.valueOf(languageObj.get("id").toString()), languageObj.get("name").toString());
 			}
@@ -135,22 +138,22 @@ public class OBSCrowdinHelper {
 			List<CrowdinRequest> requests = new ArrayList<CrowdinRequest>();
 			CrowdinRequest.setMaxRunningRequests(50);
 			for (short projectLanguageId : projectLanguages.keySet()) {
-				CrowdinRequest req = new CrowdinRequest();
-				req.setMethod(CrowdinRequestMethod.POST);
-				req.setUrl("crowdin.com/backend/user_reports/get_top_members");
-				req.setFormEntry("project_id", "51028");
-				req.setFormEntry("report_mode", "words");
-				req.setFormEntry("language_id", String.valueOf(projectLanguageId));
-				req.setFormEntry("date_from", "2014-07-07");
-				req.setFormEntry("date_to", "2030-01-01");
-				req.setFormEntry("page", "1");
-				req.setFormEntry("sortname", "winning");
-				req.setFormEntry("sortorder", "desc");
-				req.setFormEntry("rp", "60");
-				req.setFormEntry("filter", "");
-				req.setFormEntry("request", String.valueOf(i));
 				i++;
-				requests.add(req);
+				requests
+					.add(new CrowdinRequest()
+						.setMethod(CrowdinRequestMethod.POST)
+						.setUrl("crowdin.com/backend/user_reports/get_top_members")
+						.setFormEntry("project_id", "51028")
+						.setFormEntry("report_mode", "words")
+						.setFormEntry("language_id", String.valueOf(projectLanguageId))
+						.setFormEntry("date_from", "2014-07-07")
+						.setFormEntry("date_to", "2030-01-01")
+						.setFormEntry("page", "1")
+						.setFormEntry("sortname", "winning")
+						.setFormEntry("sortorder", "desc")
+						.setFormEntry("rp", "60")
+						.setFormEntry("filter", "")
+						.setFormEntry("request", String.valueOf(i)));
 			}
 
 			// read and format project member names
@@ -211,22 +214,20 @@ public class OBSCrowdinHelper {
 			if (isUserManager()) {
 				out("Account has enough permissions.");
 				out(" - building OBS Studio project");
-				CrowdinRequest req2 = new CrowdinRequest();
-				req2.setUrl("crowdin.com/backend/project_actions/export_project");
-				req2.setMethod(CrowdinRequestMethod.GET);
-				req2.setParam("project_id", "51028");
-				req2.send();
+				new CrowdinRequest().setUrl("crowdin.com/backend/project_actions/export_project").setMethod(CrowdinRequestMethod.GET).setParam("project_id", "51028").send();
 
 				run = true;
 				while (run) {
-					CrowdinRequest req = new CrowdinRequest();
-					req.setUrl("crowdin.com/backend/project_actions/check_export_status");
-					req.setMethod(CrowdinRequestMethod.GET);
-					req.setParam("project_id", "51028");
-					JSONObject statusObj = (JSONObject) new JSONParser().parse(req.send().getContent());
-					if (Integer.valueOf(statusObj.get("progress").toString()) == 100) {
+					JSONObject statusObj = (JSONObject) new JSONParser()
+						.parse(new CrowdinRequest()
+							.setUrl("crowdin.com/backend/project_actions/check_export_status")
+							.setMethod(CrowdinRequestMethod.GET)
+							.setParam("project_id", "51028")
+							.send()
+							.getContent());
+					if (Integer.valueOf(statusObj.get("progress").toString()) == 100)
 						run = false;
-					} else
+					else
 						Thread.sleep(1000);
 				}
 			} else
@@ -292,12 +293,14 @@ public class OBSCrowdinHelper {
 	}
 
 	private static boolean isUserManager() {
-		CrowdinRequest req = new CrowdinRequest();
-		req.setUrl("crowdin.com/backend/project_actions/check_export_status");
-		req.setMethod(CrowdinRequestMethod.POST);
-		req.setParam("project_id", "51028");
 		try {
-			return (Boolean) ((JSONObject) new JSONParser().parse(req.send().getContent())).get("success");
+			return (Boolean) ((JSONObject) new JSONParser()
+				.parse(new CrowdinRequest()
+					.setUrl("crowdin.com/backend/project_actions/check_export_status")
+					.setMethod(CrowdinRequestMethod.POST)
+					.setParam("project_id", "51028")
+					.send()
+					.getContent())).get("success");
 		} catch (Exception e) {
 			return false;
 		}

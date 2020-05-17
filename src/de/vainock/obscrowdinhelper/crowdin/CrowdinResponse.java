@@ -27,8 +27,9 @@ public class CrowdinResponse {
 
 	}
 
-	void setUrlDifferent(boolean differentUrl) {
+	CrowdinResponse setUrlDifferent(boolean differentUrl) {
 		this.differentUrl = differentUrl;
+		return this;
 	}
 
 	boolean isUrlDifferent() {
@@ -46,8 +47,9 @@ public class CrowdinResponse {
 		return statusCode;
 	}
 
-	void setStatusCode(int statusCode) {
+	CrowdinResponse setStatusCode(int statusCode) {
 		this.statusCode = statusCode;
+		return this;
 	}
 
 	/**
@@ -61,8 +63,9 @@ public class CrowdinResponse {
 		return content;
 	}
 
-	void setContent(String content) {
+	CrowdinResponse setContent(String content) {
 		this.content = content;
+		return this;
 	}
 
 	static List<CrowdinResponse> getResponses() {
@@ -87,7 +90,8 @@ public class CrowdinResponse {
 		return request;
 	}
 
-	void setCrowdinRequest(CrowdinRequest request) {
+	CrowdinResponse setCrowdinRequest(CrowdinRequest request) {
 		this.request = request;
+		return this;
 	}
 }
