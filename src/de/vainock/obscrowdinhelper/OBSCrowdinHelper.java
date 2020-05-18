@@ -216,8 +216,7 @@ public class OBSCrowdinHelper {
 				out(" - building OBS Studio project");
 				new CrowdinRequest().setUrl("crowdin.com/backend/project_actions/export_project").setMethod(CrowdinRequestMethod.GET).setParam("project_id", "51028").send();
 
-				run = true;
-				while (run) {
+				while (true) {
 					JSONObject statusObj = (JSONObject) new JSONParser()
 						.parse(new CrowdinRequest()
 							.setUrl("crowdin.com/backend/project_actions/check_export_status")
@@ -226,7 +225,7 @@ public class OBSCrowdinHelper {
 							.send()
 							.getContent());
 					if (Integer.valueOf(statusObj.get("progress").toString()) == 100)
-						run = false;
+						break;
 					else
 						Thread.sleep(1000);
 				}
@@ -245,7 +244,7 @@ public class OBSCrowdinHelper {
 				File file = new File(root, "Translations" + File.separator + entry.getName());
 				if (entry.isDirectory())
 					file.mkdirs();
-				if (!entry.isDirectory()) {
+				else {
 					FileOutputStream entryFos = new FileOutputStream(file);
 					while ((read = zipIn.read(buffer, 0, buffer.length)) != -1)
 						entryFos.write(buffer, 0, read);
