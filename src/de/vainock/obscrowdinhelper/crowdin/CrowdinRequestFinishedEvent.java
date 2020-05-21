@@ -6,11 +6,12 @@ package de.vainock.obscrowdinhelper.crowdin;
  * @author Vainock
  */
 public interface CrowdinRequestFinishedEvent {
-	/**
-	 * Is being triggered when a {@link CrowdinRequest} sent with {@link CrowdinRequest#sendWithTrigger()} finishes.
-	 * 
-	 * @author Vainock
-	 * @param response - The {@link CrowdinResponse} of the {@link CrowdinRequest}.
-	 */
-	void requestFinishedEvent(CrowdinResponse response);
+  /**
+   * Is being triggered when a {@link CrowdinRequest} sent with
+   * {@link CrowdinRequest#sendWithTrigger()} finishes.
+   * 
+   * @author Vainock
+   * @param response - The {@link CrowdinResponse} of the {@link CrowdinRequest}.
+   */
+  void requestFinishedEvent(CrowdinResponse response);
 }
