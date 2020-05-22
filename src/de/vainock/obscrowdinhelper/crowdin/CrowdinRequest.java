@@ -310,8 +310,7 @@ public class CrowdinRequest implements Runnable {
         resultSb.append('&');
       }
       resultSb.setLength(resultSb.length() - 1);
-      Request.Builder reqBuilder = new Request.Builder();
-      reqBuilder.url(resultSb.toString());
+      Request.Builder reqBuilder = new Request.Builder().url(resultSb.toString());
       for (Entry<String, String> entry : headers.entrySet())
         reqBuilder.header(entry.getKey(), entry.getValue());
       for (Cookie cookie : CrowdinCookieJar.getInstance().getCookies())

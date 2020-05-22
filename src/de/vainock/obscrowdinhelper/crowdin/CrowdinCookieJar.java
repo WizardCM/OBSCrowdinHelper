@@ -34,8 +34,7 @@ public class CrowdinCookieJar implements CookieJar {
 
   @Override
   public void saveFromResponse(HttpUrl url, List<Cookie> cookies) {
-    for (Cookie cookie : cookies)
-      this.cookies.add(cookie);
+    this.cookies.addAll(cookies);
   }
 
   void clearCookiesFromLogin() {
